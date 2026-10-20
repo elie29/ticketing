@@ -25,6 +25,13 @@ test('authentication return paths reject external and malformed destinations', a
   }
 });
 
+test('authentication return paths reject dot segments that normalize to a protocol-relative URL', async () => {
+  const { getReturnPath } = await import('../lib/ticketing.js');
+  for (const value of ['/a/..//evil.example', '/a/../..//evil.example', '/a/..//evil.example/x?y=1']) {
+    assert.equal(getReturnPath(value), '/');
+  }
+});
+
 test('prices are formatted without assigning an unsupported currency', async () => {
   const { formatPrice } = await import('../lib/ticketing.js');
   assert.equal(formatPrice(25), '25.00');

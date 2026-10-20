@@ -18,7 +18,10 @@ export function getReturnPath(value) {
   if (typeof value !== 'string' || !value.startsWith('/')) return '/';
   try {
     const target = new URL(value, 'http://ticketing.local');
-    return target.origin === 'http://ticketing.local' ? `${target.pathname}${target.search}${target.hash}` : '/';
+    if (target.origin !== 'http://ticketing.local') return '/';
+    // Dot segments can normalize to a leading '//' or '/\', which browsers read as protocol-relative.
+    if (target.pathname.startsWith('//') || target.pathname.startsWith('/\\')) return '/';
+    return `${target.pathname}${target.search}${target.hash}`;
   } catch {
     return '/';
   }
