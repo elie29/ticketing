@@ -23,9 +23,9 @@ Closed on 2026-10-20 at the user's request. Lockfile, shared-package, Express an
 
 ## Current Reconciliation
 
-- 2026-10-20 - CI/common fixes are committed across cb92213, 87631d2 and ae99ee6; no local common publication or npm authentication is required. All consumer lock metadata was aligned, including auth after the JetStream dependency change.
-- 2026-10-20 - The complete root npm test later passed 100 tests plus shared/backend typechecks and the client compilation gate; two isolated JetStream replay/resume/redelivery tests passed separately. All 20 backend suites now live outside src/ (24dd9f5), with explicit mock factories and preserved assertions.
-- 2026-10-20 - Development Compose now starts applications by default; tools remain opt-in. The exact override/Windows/Linux engine contract, native Windows non-destructive override check and real direct/shortcut Podman validation passed. c7e0bc1/95e3bf3 supersede this plan's original app-profile-only default and unconditional WSL Compose relay.
+- 2026-10-20 - CI/common fixes are committed across 56a995d; no local common publication or npm authentication is required. All consumer lock metadata was aligned, including auth after the JetStream dependency change.
+- 2026-10-20 - The complete root npm test later passed 100 tests plus shared/backend typechecks and the client compilation gate; two isolated JetStream replay/resume/redelivery tests passed separately. All 20 backend suites now live outside src/ (56a995d), with explicit mock factories and preserved assertions.
+- 2026-10-20 - Development Compose now starts applications by default; tools remain opt-in. The exact override/Windows/Linux engine contract, native Windows non-destructive override check and real direct/shortcut Podman validation passed. 56a995d supersede this plan's original app-profile-only default and unconditional WSL Compose relay.
 - 2026-10-20 - The previously deferred compose:infra switching and local npm run dev startup were exercised: infrastructure stays healthy, HTTP backends respond, expiration connects and the frontend proxy returns 200. Actual common-source content-change recompilation and final diagnostic/process cleanup remain unverified/open in [Task 4 of the development Compose plan](2026-10-20-production-jetstream.md).
 - 2026-10-20 - Package/support READMEs and reusable VS Code tasks are delivered. Two later temporary diagnostic entries still require cleanup; do not confuse them with the removed initial validation tasks. Production Docker was cancelled, not left as pending deployment work.
 - 2026-10-20 - This plan audit does not rerun tests or inspect GitHub-hosted results. Browser auth/create/edit/reserve/cancel/release/order-history and focused desktop/mobile checks subsequently passed; no external security/accessibility/load certification is claimed.
@@ -62,7 +62,7 @@ Fix the reported npm ci manifest/lockfile mismatch without disabling strict lock
 - Workflow diagnostics and diff whitespace validation passed. GitHub-hosted execution itself has not been rerun from this environment; no commits or pushes were made.
 - Full npm test gate subsequently passed on Node 24 against rebuilt containers: manifest 3, routing 7, common HTTP contracts 3, auth 12, tickets 23, orders 17, expiration 4, acceptance 5; total 74 passed. Shared/backend typechecks and Next.js production build also passed. Full output is in /tmp/ticketing-all-tests.log in WSL.
 - Full Compose startup succeeded with common exiting 0 and application APIs healthy. Acceptance first exposed the obsolete Next Link-with-anchor pattern; updating the header to the current API and force-recreating the client resolved it. All five acceptance tests then passed, and passed again in the full npm test gate.
-- Subsequent completed work supersedes the historical failure notes: configurable order lifetime, real automatic-expiration acceptance, and Vitest migration are implemented in 87631d2. The latest CI=1 npm test passed 84 tests with no skipped cases, including all six acceptance scenarios against real MongoDB/Redis/NATS. Root and all six package lockfiles match their manifests/engines.
+- Subsequent completed work supersedes the historical failure notes: configurable order lifetime, real automatic-expiration acceptance, and Vitest migration are implemented in 56a995d. The latest CI=1 npm test passed 84 tests with no skipped cases, including all six acceptance scenarios against real MongoDB/Redis/NATS. Root and all six package lockfiles match their manifests/engines.
 
 ## Task 4 - Add Root Install/Update Commands
 
@@ -112,7 +112,7 @@ Fix the reported npm ci manifest/lockfile mismatch without disabling strict lock
 - [x] 2026-10-20 - Rebuild full Compose and verify live state without deleting volumes or unrelated containers. Common exits 0; API containers are healthy. Force-recreate the changed client when Podman retained its prior image.
 - [x] 2026-10-20 - Run npm test end to end successfully: all 74 tests, shared/backend typechecks, and frontend production build pass; no test was skipped or weakened to obtain the result.
 - [x] 2026-10-20 - Update README with verified commands/results and record the exact full gate outcome.
-- [x] 2026-10-20 - Sync the design with the implemented private local common, Node 24, Compose profiles, Vitest, and real expiration coverage. The focused migration review at 87631d2 found no material issues; no full production-readiness certification is claimed.
+- [x] 2026-10-20 - Sync the design with the implemented private local common, Node 24, Compose profiles, Vitest, and real expiration coverage. The focused migration review at 56a995d found no material issues; no full production-readiness certification is claimed.
 
 ## Task 7 - Support Infrastructure-Only Watched Development
 
@@ -138,3 +138,5 @@ At original closure, infrastructure switching, local watchers and browser intera
 ## Blockers
 
 None.
+
+- 2026-10-20 — Commit references point at the initial commit `56a995d`, which holds this plan's work; the earlier commits `24dd9f5`, `87631d2`, `95e3bf3`, `ae99ee6`, `c7e0bc1`, `cb92213` are no longer in `main`'s history.

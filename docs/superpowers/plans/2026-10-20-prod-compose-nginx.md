@@ -9,17 +9,17 @@
 ## Tasks
 
 - [x] Task 0 — 2026-10-20 · 6badd69 — Spec and security review
-- [x] Task 1 — 2026-10-20 · a5081d6 — nginx configuration
-- [x] Task 2 — 2026-10-20 · e737478 — Client production image
-- [x] Task 3 — 2026-10-20 · e737478 — Backend image hardening
-- [x] Task 4 — 2026-10-20 · 0966335 — Compose split (prod file + dev overlay)
-- [x] Task 5 — 2026-10-20 · 342ad8d — Scripts and tests
-- [x] Task 6 — 2026-10-20 · 3973b01 — CI acceptance job
-- [x] Task 7 — 2026-10-20 · 8914794 — Documentation
+- [x] Task 1 — 2026-10-20 · 50cf5ae — nginx configuration
+- [x] Task 2 — 2026-10-20 · 50cf5ae — Client production image
+- [x] Task 3 — 2026-10-20 · 50cf5ae — Backend image hardening
+- [x] Task 4 — 2026-10-20 · 50cf5ae — Compose split (prod file + dev overlay)
+- [x] Task 5 — 2026-10-20 · 50cf5ae — Scripts and tests
+- [x] Task 6 — 2026-10-20 · 50cf5ae — CI acceptance job
+- [x] Task 7 — 2026-10-20 · 50cf5ae — Documentation
 - [x] Task 8 — 2026-10-20 — End-to-end verification and local commit
-- [x] Task 9 — 2026-10-20 · 376f471 — Admin UIs in infra mode (mongo-express + Redis Insight)
-- [x] Task 10 — 2026-10-20 · 08063f9 — Drop mongo-express, pin Redis to `7-alpine`
-- [x] Task 11 — 2026-10-20 · 4c74f51 — Pin MongoDB to `9.0`
+- [x] Task 9 — 2026-10-20 · 50cf5ae — Admin UIs in infra mode (mongo-express + Redis Insight)
+- [x] Task 10 — 2026-10-20 · 50cf5ae — Drop mongo-express, pin Redis to `7-alpine`
+- [x] Task 11 — 2026-10-20 · 50cf5ae — Pin MongoDB to `9.0`
 
 ## Context
 
@@ -79,79 +79,79 @@ Engine selection logic untouched.
 
 ## Task 1 — nginx configuration
 
-- [x] 2026-10-20 · a5081d6 — Create `deploy/nginx/default.conf` with the four locations above (prefixes `/api/users/`, `/api/tickets`, `/api/orders`, `/`; nginx default timeouts and buffers kept).
-- [x] 2026-10-20 · a5081d6 — Verify with `nginx -t` (run in `nginx:1.27-alpine` with the four upstream hosts mapped by `--add-host`): syntax ok.
+- [x] 2026-10-20 · 50cf5ae — Create `deploy/nginx/default.conf` with the four locations above (prefixes `/api/users/`, `/api/tickets`, `/api/orders`, `/`; nginx default timeouts and buffers kept).
+- [x] 2026-10-20 · 50cf5ae — Verify with `nginx -t` (run in `nginx:1.27-alpine` with the four upstream hosts mapped by `--add-host`): syntax ok.
 
 ## Task 2 — Client production image
 
-- [x] 2026-10-20 · e737478 — Rewrite `client/Dockerfile` as multi-stage, non-root, `next build` + `next start`.
-- [x] 2026-10-20 · e737478 — Extend `client/.dockerignore` (`coverage`, `test`).
-- [x] 2026-10-20 · e737478 — Verify: `docker build client` succeeds; the container runs as `node` and `next start` serves the page and `/_next/static` (200). `/` alone answers 404 because SSR fetches `/api/tickets` with no backend; the 200 on `/` is checked through nginx in Task 8.
+- [x] 2026-10-20 · 50cf5ae — Rewrite `client/Dockerfile` as multi-stage, non-root, `next build` + `next start`.
+- [x] 2026-10-20 · 50cf5ae — Extend `client/.dockerignore` (`coverage`, `test`).
+- [x] 2026-10-20 · 50cf5ae — Verify: `docker build client` succeeds; the container runs as `node` and `next start` serves the page and `/_next/static` (200). `/` alone answers 404 because SSR fetches `/api/tickets` with no backend; the 200 on `/` is checked through nginx in Task 8.
 
 ## Task 3 — Backend image hardening
 
-- [x] 2026-10-20 · e737478 — `common/Dockerfile` `service` stage: `ENV NODE_ENV=production`, `USER node` after `npm ci`.
-- [x] 2026-10-20 · e737478 — Verify `docker compose build auth` and that the container starts: healthy, runs as uid 1000 `node`, connected to Mongo.
+- [x] 2026-10-20 · 50cf5ae — `common/Dockerfile` `service` stage: `ENV NODE_ENV=production`, `USER node` after `npm ci`.
+- [x] 2026-10-20 · 50cf5ae — Verify `docker compose build auth` and that the container starts: healthy, runs as uid 1000 `node`, connected to Mongo.
 
 ## Task 4 — Compose split
 
-- [x] 2026-10-20 · 0966335 — Rewrite `docker-compose.yaml`: add `nginx`, drop `common` service + `common-build` volume + all host ports except nginx, require secrets, client env and healthcheck.
-- [x] 2026-10-20 · 0966335 — Create `docker-compose.dev.yaml` (infra ports on `127.0.0.1`, mongo-express under `tools` profile with explicit basic auth, `.env` login and pinned tag).
-- [x] 2026-10-20 · 0966335 — Add `.env.example` with empty secret values; add `.env` to root `.gitignore`.
-- [x] 2026-10-20 · 0966335 — Verify: `docker compose config` and `docker compose -f docker-compose.yaml -f docker-compose.dev.yaml config` both valid; without secrets both fail on `JWT_KEY` and `MONGO_ROOT_PASSWORD`; only nginx binds all interfaces, every overlay port binds `127.0.0.1`.
+- [x] 2026-10-20 · 50cf5ae — Rewrite `docker-compose.yaml`: add `nginx`, drop `common` service + `common-build` volume + all host ports except nginx, require secrets, client env and healthcheck.
+- [x] 2026-10-20 · 50cf5ae — Create `docker-compose.dev.yaml` (infra ports on `127.0.0.1`, mongo-express under `tools` profile with explicit basic auth, `.env` login and pinned tag).
+- [x] 2026-10-20 · 50cf5ae — Add `.env.example` with empty secret values; add `.env` to root `.gitignore`.
+- [x] 2026-10-20 · 50cf5ae — Verify: `docker compose config` and `docker compose -f docker-compose.yaml -f docker-compose.dev.yaml config` both valid; without secrets both fail on `JWT_KEY` and `MONGO_ROOT_PASSWORD`; only nginx binds all interfaces, every overlay port binds `127.0.0.1`.
 
 ## Task 5 — Scripts and tests
 
-- [x] 2026-10-20 · 342ad8d — TDD: update `test/compose.test.cjs` expectations first (red: infra/down lacked the overlay), then `scripts/compose.cjs` per the table (green).
-- [x] 2026-10-20 · 342ad8d — Update the acceptance default URL in `test/acceptance/ticketing.test.cjs`.
-- [x] 2026-10-20 · 342ad8d — Run `npm run test:manifests` (it runs `test/compose.test.cjs` too; no `test:compose` script exists): 7/7 pass.
+- [x] 2026-10-20 · 50cf5ae — TDD: update `test/compose.test.cjs` expectations first (red: infra/down lacked the overlay), then `scripts/compose.cjs` per the table (green).
+- [x] 2026-10-20 · 50cf5ae — Update the acceptance default URL in `test/acceptance/ticketing.test.cjs`.
+- [x] 2026-10-20 · 50cf5ae — Run `npm run test:manifests` (it runs `test/compose.test.cjs` too; no `test:compose` script exists): 7/7 pass.
 
 ## Task 6 — CI acceptance job
 
-- [x] 2026-10-20 · 3973b01 — Add `JWT_KEY` and `MONGO_ROOT_PASSWORD` env to the acceptance job in `.github/workflows/tests.yml`.
-- [x] 2026-10-20 · 3973b01 — Add `deploy/**` and `docker-compose.dev.yaml` to the workflow path triggers if paths are filtered.
+- [x] 2026-10-20 · 50cf5ae — Add `JWT_KEY` and `MONGO_ROOT_PASSWORD` env to the acceptance job in `.github/workflows/tests.yml`.
+- [x] 2026-10-20 · 50cf5ae — Add `deploy/**` and `docker-compose.dev.yaml` to the workflow path triggers if paths are filtered.
 
 ## Task 7 — Documentation
 
-- [x] 2026-10-20 · 8914794 — Root `README.md`: replace "development-only" statements, document `cp .env.example .env`, `docker compose up --build -d`, URL `http://localhost`, infra mode, security limits (HTTP only, no Redis/NATS auth).
-- [x] 2026-10-20 · 8914794 — Align `scripts/README.md`, `client/README.md`, `common/README.md`, `auth/README.md` matching lines (also the same development-only lines in `tickets`, `orders` and `expiration` READMEs; root architecture text and diagram now show nginx).
-- [x] 2026-10-20 · 8914794 — `scripts/dev.sh` loads the root `.env` without overriding exported variables (owner decision, see Decisions); checked in a scratch copy: `.env` values with `=` load, empty values fall back to defaults, shell exports win, missing `.env` keeps defaults.
-- [x] 2026-10-20 · f060287 — Per-service `.env` cleanup (owner request): `auth/.env` and `tickets/.env` untracked and pointed at `127.0.0.1` instead of the public IP `REDACTED_IP`, then removed with their templates since no workflow needs them (`npm run dev`, Compose and the test suites all supply the variables); `orders/.env` and `expiration/.env` deleted (no dotenv in those services); auth, tickets and root READMEs updated. Auth (12) and tickets (23) suites pass without them.
+- [x] 2026-10-20 · 50cf5ae — Root `README.md`: replace "development-only" statements, document `cp .env.example .env`, `docker compose up --build -d`, URL `http://localhost`, infra mode, security limits (HTTP only, no Redis/NATS auth).
+- [x] 2026-10-20 · 50cf5ae — Align `scripts/README.md`, `client/README.md`, `common/README.md`, `auth/README.md` matching lines (also the same development-only lines in `tickets`, `orders` and `expiration` READMEs; root architecture text and diagram now show nginx).
+- [x] 2026-10-20 · 50cf5ae — `scripts/dev.sh` loads the root `.env` without overriding exported variables (owner decision, see Decisions); checked in a scratch copy: `.env` values with `=` load, empty values fall back to defaults, shell exports win, missing `.env` keeps defaults.
+- [x] 2026-10-20 · 50cf5ae — Per-service `.env` cleanup (owner request): `auth/.env` and `tickets/.env` untracked and pointed at `127.0.0.1` instead of the public IP `REDACTED_IP`, then removed with their templates since no workflow needs them (`npm run dev`, Compose and the test suites all supply the variables); `orders/.env` and `expiration/.env` deleted (no dotenv in those services); auth, tickets and root READMEs updated. Auth (12) and tickets (23) suites pass without them.
 
 ## Task 8 — End-to-end verification and local commit
 
-- [x] 2026-10-20 · f060287 — `cp .env.example .env` with test values; `docker compose up --build -d`; all services reach `healthy` (`docker compose ps`).
-- [x] 2026-10-20 · f060287 — `curl -i http://localhost/` returns the Next page; `curl -i http://localhost/api/users/currentuser` returns 401 `Not authorized` from auth through nginx.
-- [x] 2026-10-20 · f060287 — `npm run test:acceptance` passes against `http://localhost` (6 scenarios, including cookie session and expiration with `compose:acceptance`): 6/6 pass with `ORDER_EXPIRATION_SECONDS=15` exported (a plain `docker compose up` after `compose:acceptance` recreates orders with the `.env` value).
-- [x] 2026-10-20 · f060287 — Only nginx has a published port (`docker compose ps`); `docker port <mongo container>` is empty.
-- [x] 2026-10-20 · a93481e — `npm run compose:infra` then `npm run dev`: app works on `http://localhost:3000` with the dev rewrites, Mongo reachable on `127.0.0.1:27017`; `docker compose ps` shows every infra port bound to `127.0.0.1` only. Passed: services authenticate to Mongo with the root `.env` password; `/` and `/api/tickets` return 200 on :3000.
-- [x] 2026-10-20 · a93481e — mongo-express via `--profile tools`: `curl -i http://127.0.0.1:18081` returns 401 without credentials and 200 with the `.env` login (401 with the old `admin`/`local-dev-password`).
-- [x] 2026-10-20 · f060287 — `docker compose up` without `.env`, and again right after `cp .env.example .env`, fails fast with the `JWT_KEY` required message.
-- [x] 2026-10-20 · a93481e — `npm test` (root gate) passes; `npm --prefix client run build` still passes (96 tests in 7 suites, client compiled).
+- [x] 2026-10-20 · 50cf5ae — `cp .env.example .env` with test values; `docker compose up --build -d`; all services reach `healthy` (`docker compose ps`).
+- [x] 2026-10-20 · 50cf5ae — `curl -i http://localhost/` returns the Next page; `curl -i http://localhost/api/users/currentuser` returns 401 `Not authorized` from auth through nginx.
+- [x] 2026-10-20 · 50cf5ae — `npm run test:acceptance` passes against `http://localhost` (6 scenarios, including cookie session and expiration with `compose:acceptance`): 6/6 pass with `ORDER_EXPIRATION_SECONDS=15` exported (a plain `docker compose up` after `compose:acceptance` recreates orders with the `.env` value).
+- [x] 2026-10-20 · 50cf5ae — Only nginx has a published port (`docker compose ps`); `docker port <mongo container>` is empty.
+- [x] 2026-10-20 · 50cf5ae — `npm run compose:infra` then `npm run dev`: app works on `http://localhost:3000` with the dev rewrites, Mongo reachable on `127.0.0.1:27017`; `docker compose ps` shows every infra port bound to `127.0.0.1` only. Passed: services authenticate to Mongo with the root `.env` password; `/` and `/api/tickets` return 200 on :3000.
+- [x] 2026-10-20 · 50cf5ae — mongo-express via `--profile tools`: `curl -i http://127.0.0.1:18081` returns 401 without credentials and 200 with the `.env` login (401 with the old `admin`/`local-dev-password`).
+- [x] 2026-10-20 · 50cf5ae — `docker compose up` without `.env`, and again right after `cp .env.example .env`, fails fast with the `JWT_KEY` required message.
+- [x] 2026-10-20 · 50cf5ae — `npm test` (root gate) passes; `npm --prefix client run build` still passes (96 tests in 7 suites, client compiled).
 - [x] 2026-10-20 — Browser check of the running prod stack (signup, create ticket, order): passed (owner). The accessibility pass and the Redis Insight EULA check move to Task 5 of `2026-10-20-client-vite-spa.md`, since that plan replaces the client being checked.
 - [x] 2026-10-20 — Local commit. No push.
 
 ## Task 9 — Admin UIs in infra mode
 
-- [x] 2026-10-20 · 376f471 — TDD: `test/compose.test.cjs` expects `infra` to stop only the app containers and nginx, then start `mongo redis nats mongo-express redisinsight`; `down` drops `--profile tools`. Red, then green (7/7).
-- [x] 2026-10-20 · 376f471 — `docker-compose.dev.yaml`: remove the `tools` profile from mongo-express; add `redisinsight` (pinned `redis/redisinsight:2.70.0` tag, `127.0.0.1:15540:5540`, preconfigured connection to `redis:6379`, `depends_on` redis healthy).
-- [x] 2026-10-20 · 376f471 — `scripts/compose.cjs` per the test; `npm run test:manifests` green.
-- [x] 2026-10-20 · 376f471 — Docs: root README infra section and ports, `scripts/README.md`, spec `docs/superpowers/specs/2026-10-20-prod-compose-nginx-design.md` and this plan's Design section (mongo-express no longer opt-in; Redis Insight has no login, local-only).
-- [x] 2026-10-20 · 376f471 — Verify: `npm run compose:infra` starts all five; mongo-express 401/200 as before; `curl http://127.0.0.1:15540/` returns 200; ports bound to `127.0.0.1` only; `compose:down` removes both UIs. Redis Insight adds the preconfigured `ticketing` connection only after its EULA is accepted in the UI (its discovery code checks `agreements.eula`), so the connection list stays empty until the owner accepts it; that check moves to the browser pass.
+- [x] 2026-10-20 · 50cf5ae — TDD: `test/compose.test.cjs` expects `infra` to stop only the app containers and nginx, then start `mongo redis nats mongo-express redisinsight`; `down` drops `--profile tools`. Red, then green (7/7).
+- [x] 2026-10-20 · 50cf5ae — `docker-compose.dev.yaml`: remove the `tools` profile from mongo-express; add `redisinsight` (pinned `redis/redisinsight:2.70.0` tag, `127.0.0.1:15540:5540`, preconfigured connection to `redis:6379`, `depends_on` redis healthy).
+- [x] 2026-10-20 · 50cf5ae — `scripts/compose.cjs` per the test; `npm run test:manifests` green.
+- [x] 2026-10-20 · 50cf5ae — Docs: root README infra section and ports, `scripts/README.md`, spec `docs/superpowers/specs/2026-10-20-prod-compose-nginx-design.md` and this plan's Design section (mongo-express no longer opt-in; Redis Insight has no login, local-only).
+- [x] 2026-10-20 · 50cf5ae — Verify: `npm run compose:infra` starts all five; mongo-express 401/200 as before; `curl http://127.0.0.1:15540/` returns 200; ports bound to `127.0.0.1` only; `compose:down` removes both UIs. Redis Insight adds the preconfigured `ticketing` connection only after its EULA is accepted in the UI (its discovery code checks `agreements.eula`), so the connection list stays empty until the owner accepts it; that check moves to the browser pass.
 
 ## Task 10 — Drop mongo-express, pin Redis
 
-- [x] 2026-10-20 · 08063f9 — TDD: `test/compose.test.cjs` expects `infra` to start `mongo redis nats redisinsight` (no `mongo-express`). Red, then green (7/7).
-- [x] 2026-10-20 · 08063f9 — `docker-compose.dev.yaml`: remove the `mongo-express` service; `scripts/compose.cjs` per the test.
-- [x] 2026-10-20 · 08063f9 — `.env.example` and local `.env`: remove `MONGO_EXPRESS_USERNAME` / `MONGO_EXPRESS_PASSWORD`.
-- [x] 2026-10-20 · 08063f9 — `docker-compose.yaml`: `redis` image `docker.io/library/redis:7-alpine`.
-- [x] 2026-10-20 · 08063f9 — Docs: root README (infra, ports, Compass connection string), `scripts/README.md`, spec, this plan's Design section.
-- [x] 2026-10-20 · 08063f9 — Verify: `npm run test:manifests`; both Compose configs valid; `compose:infra` runs redis 7 and Redis Insight; prod stack acceptance 6/6 with Redis 7 (expiration uses Bull). Passed: Redis 7.4.8, Redis Insight 200 on `127.0.0.1:15540`, acceptance 6/6.
+- [x] 2026-10-20 · 50cf5ae — TDD: `test/compose.test.cjs` expects `infra` to start `mongo redis nats redisinsight` (no `mongo-express`). Red, then green (7/7).
+- [x] 2026-10-20 · 50cf5ae — `docker-compose.dev.yaml`: remove the `mongo-express` service; `scripts/compose.cjs` per the test.
+- [x] 2026-10-20 · 50cf5ae — `.env.example` and local `.env`: remove `MONGO_EXPRESS_USERNAME` / `MONGO_EXPRESS_PASSWORD`.
+- [x] 2026-10-20 · 50cf5ae — `docker-compose.yaml`: `redis` image `docker.io/library/redis:7-alpine`.
+- [x] 2026-10-20 · 50cf5ae — Docs: root README (infra, ports, Compass connection string), `scripts/README.md`, spec, this plan's Design section.
+- [x] 2026-10-20 · 50cf5ae — Verify: `npm run test:manifests`; both Compose configs valid; `compose:infra` runs redis 7 and Redis Insight; prod stack acceptance 6/6 with Redis 7 (expiration uses Bull). Passed: Redis 7.4.8, Redis Insight 200 on `127.0.0.1:15540`, acceptance 6/6.
 
 ## Task 11 — Pin MongoDB
 
-- [x] 2026-10-20 · 4c74f51 — `docker-compose.yaml`: `mongo` image `docker.io/library/mongo:9.0` (the unpinned tag resolved to 9.0.4).
-- [x] 2026-10-20 · 4c74f51 — Verify: Compose config valid; mongo recreated on `9.0`, healthy; services reconnect; `/api/tickets` 200 through nginx. Passed (MongoDB v9.0.4).
+- [x] 2026-10-20 · 50cf5ae — `docker-compose.yaml`: `mongo` image `docker.io/library/mongo:9.0` (the unpinned tag resolved to 9.0.4).
+- [x] 2026-10-20 · 50cf5ae — Verify: Compose config valid; mongo recreated on `9.0`, healthy; services reconnect; `/api/tickets` 200 through nginx. Passed (MongoDB v9.0.4).
 
 ## Out of scope
 
@@ -188,6 +188,7 @@ TLS/domain, Redis/NATS authentication, compiling backend TypeScript to JS, Kuber
 - 2026-10-20 — Redis Insight image tag is `redis/redisinsight:2.70` (owner edit in the IDE, replacing `2.70.0`; kept).
 - 2026-10-20 — MongoDB pinned to `docker.io/library/mongo:9.0` (owner asked to pin; assistant chose the minor line of the version already running, 9.0.4, so patches arrive but no major jump). The owner asked for alpine: no official `mongo` alpine tag exists (`9.0-alpine`, `9-alpine`, `alpine` all missing; MongoDB does not support musl), and unofficial builds are not adopted, so `9.0` stays.
 - 2026-10-20 — Plan closed after the owner's browser check passed; the accessibility pass and Redis Insight EULA check are carried into `2026-10-20-client-vite-spa.md` Task 5 (assistant call; the Next client they would check is being replaced).
+- 2026-10-20 — History rewritten by the owner (squash into `50cf5ae`); commit references updated to `50cf5ae`, which now holds the work of `08063f9`, `0966335`, `342ad8d`, `376f471`, `3973b01`, `4c74f51`, `8914794`, `a5081d6`, `a93481e`, `e737478`, `f060287`.
 
 ## Blockers
 

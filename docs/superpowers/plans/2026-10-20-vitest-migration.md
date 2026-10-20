@@ -40,7 +40,7 @@ Use Vitest consistently instead of Jest/SWC and node:test, preserving all 84 ver
 
 - [x] 2026-10-20 - Validate dependencies/devDependencies/engines against all seven lockfiles and pass manifest cohesion checks. No runtime Jest/node:test usage remains; the ts-jest prohibition is an intentional guard.
 - [x] 2026-10-20 - CI=1 npm test passed end to end against the real 15-second acceptance stack: all 84 tests, shared/backend typechecks, and frontend production build passed with no skipped tests.
-- [x] 2026-10-20 - Review Docker/common source boundaries and CI installation paths. Focused independent review at 87631d2 reported no material findings. Add root config/lockfile CI triggers.
+- [x] 2026-10-20 - Review Docker/common source boundaries and CI installation paths. Focused independent review at 56a995d reported no material findings. Add root config/lockfile CI triggers.
 
 ## Task 5 - Documentation
 
@@ -49,7 +49,7 @@ Use Vitest consistently instead of Jest/SWC and node:test, preserving all 84 ver
 
 ## Verification Results
 
-- Implementation commit: 87631d2. User commits are preserved; no assistant commit or push was performed.
+- Implementation commit: 56a995d. User commits are preserved; no assistant commit or push was performed.
 - Executed full gate: CI=1 npm test on Node 24 in WSL; complete output: /tmp/ticketing-vitest-all-tests.log.
 - Test totals: manifests 3, common HTTP contracts 3, auth 12, tickets 23, orders 26, expiration 4, acceptance 6, routing 7; 84 passed, none skipped.
 - Shared/backend typechecks and Next.js production build passed in the same root run.
@@ -72,10 +72,12 @@ The latest GitHub-hosted Vitest workflow was not independently observed. The ori
 ## Current Reconciliation
 
 - 2026-10-20 - Vitest remains the runner throughout root/common/client/backends. No Jest/SWC migration task remains open; the historical 84 cases were preserved while new assertions increased executed coverage to 100 root plus 2 isolated broker tests.
-- 2026-10-20 · 24dd9f5 - Backend test specs, setup and NATS mocks moved into package-level test/ folders. Vitest discovery and TypeScript no-emit coverage were updated; 20 backend suites and all assertions were retained.
-- 2026-10-20 · c7e0bc1 - Compose/layout checks and isolated broker tests were added, along with separate broker CI execution. The default shared unit suite excludes the explicit broker suite, so it does not require a live broker or silently skip integration cases.
+- 2026-10-20 · 56a995d - Backend test specs, setup and NATS mocks moved into package-level test/ folders. Vitest discovery and TypeScript no-emit coverage were updated; 20 backend suites and all assertions were retained.
+- 2026-10-20 · 56a995d - Compose/layout checks and isolated broker tests were added, along with separate broker CI execution. The default shared unit suite excludes the explicit broker suite, so it does not require a live broker or silently skip integration cases.
 - 2026-10-20 - See [the completed frontend plan](2026-10-20-ticket-order-client.md) for browser/docs delivery and [the active development plan](2026-10-20-production-jetstream.md) for the only remaining runtime/cleanup task. All package README names and links use the user's uppercase casing; branding is TicTix.
 
 ## Blockers
 
 None.
+
+- 2026-10-20 — Commit references point at the initial commit `56a995d`, which holds this plan's work; the earlier commits `24dd9f5`, `87631d2`, `c7e0bc1` are no longer in `main`'s history.

@@ -30,9 +30,9 @@ Subsequent CI/local-common, Vitest, client and development Compose work resolved
 
 ## Current Reconciliation
 
-- 2026-10-20 - Node 24, private local common and aligned dependencies/lockfiles are implemented. Vitest replaced the intermediate Jest/SWC setup in 87631d2; Tailwind later replaced Bootstrap in e09ed01; JetStream replaced STAN in eddd5ca/ae99ee6. Earlier version/technology mentions below are historical, not today's required stack.
-- 2026-10-20 - The original 84-test migration baseline was superseded by the complete 100-test root gate after external test relocation (24dd9f5/c7e0bc1), plus two separately executed real-broker tests. Shared/backend typechecks and the Next client compilation gate passed; no tests were skipped.
-- 2026-10-20 - All six package READMEs, scripts/test support READMEs, default full-stack development Compose, portable engine selection and reusable VS Code tasks are delivered in c7e0bc1/95e3bf3. Exact TicTix branding and course-attribution removal are in b494b13 and received focused browser/source checks.
+- 2026-10-20 - Node 24, private local common and aligned dependencies/lockfiles are implemented. Vitest replaced the intermediate Jest/SWC setup in 56a995d; Tailwind later replaced Bootstrap in 56a995d; JetStream replaced STAN in 56a995d. Earlier version/technology mentions below are historical, not today's required stack.
+- 2026-10-20 - The original 84-test migration baseline was superseded by the complete 100-test root gate after external test relocation (56a995d), plus two separately executed real-broker tests. Shared/backend typechecks and the Next client compilation gate passed; no tests were skipped.
+- 2026-10-20 - All six package READMEs, scripts/test support READMEs, default full-stack development Compose, portable engine selection and reusable VS Code tasks are delivered in 56a995d. Exact TicTix branding and course-attribution removal are in 56a995d and received focused browser/source checks.
 - 2026-10-20 - Production Docker was explicitly cancelled; no production container/deployment delivery, DNS or TLS work is pending. Do not interpret the existing Next compilation gate as production Docker.
 - 2026-10-20 - Infrastructure-only switching, local app startup and frontend proxy HTTP 200 were observed. Common-source content-change recompilation, temporary diagnostic-task cleanup and restoring full containers remain open in [the development Compose plan](2026-10-20-production-jetstream.md). The [client delivery plan](2026-10-20-ticket-order-client.md) is complete.
 - 2026-10-20 - This is a documentation reconciliation, not a new test/audit run. Remote GitHub Actions and a real Docker Desktop daemon remain unverified; point-in-time dependency audit results below do not substitute for a fresh security/advisory/load/rollback review. The requested security-review skill was unavailable and is not represented as executed.
@@ -185,3 +185,5 @@ Implementation follows the existing design with the user's follow-up requirement
 ## Blockers
 
 None owned by this closed historical tracker. Earlier local-consumer lockfile/script/backend issues are resolved. Remaining source-watch proof and runtime/task cleanup belong to Task 4 of the development Compose plan. Remote execution and independent security/load/rollback certification are not claimed; production Docker is cancelled.
+
+- 2026-10-20 — Commit references point at the initial commit `56a995d`, which holds this plan's work; the earlier commits `24dd9f5`, `87631d2`, `95e3bf3`, `ae99ee6`, `b494b13`, `c7e0bc1`, `e09ed01`, `eddd5ca` are no longer in `main`'s history.
