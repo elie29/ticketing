@@ -1,0 +1,25 @@
+{
+  "name": "ticketing",
+  "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "install": "node scripts/manage-packages.cjs install",
+    "update": "node scripts/manage-packages.cjs update",
+    "dev": "node scripts/manage-packages.cjs dev",
+    "compose:up": "node scripts/manage-packages.cjs compose up",
+    "compose:acceptance": "node scripts/manage-packages.cjs compose acceptance",
+    "compose:infra": "node scripts/manage-packages.cjs compose infra",
+    "compose:down": "node scripts/manage-packages.cjs compose down",
+    "test": "npm run test:manifests && npm run test:services && npm run test:acceptance && npm run test:routing",
+    "test:manifests": "node scripts/manage-packages.cjs vitest test/package-manifests.test.cjs test/compose.test.cjs",
+    "test:services": "node scripts/manage-packages.cjs test",
+    "test:acceptance": "node scripts/manage-packages.cjs vitest test/acceptance/ticketing.test.cjs",
+    "test:routing": "node scripts/manage-packages.cjs vitest client/test"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "vitest": "^5.0.5"
+  }
+}

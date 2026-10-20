@@ -1,0 +1,8 @@
+**/node_modules
+**/build
+**/.next
+**/coverage
+**/.env
+**/.env.*
+.git
+docs

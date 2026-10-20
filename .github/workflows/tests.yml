@@ -1,0 +1,107 @@
+name: tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'common/**'
+      - 'auth/**'
+      - 'orders/**'
+      - 'tickets/**'
+      - 'expiration/**'
+      - 'client/**'
+      - 'test/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vitest.config.mts'
+      - 'docker-compose.yaml'
+      - '.github/workflows/tests.yml'
+  pull_request:
+    paths:
+      - 'common/**'
+      - 'auth/**'
+      - 'orders/**'
+      - 'tickets/**'
+      - 'expiration/**'
+      - 'client/**'
+      - 'test/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vitest.config.mts'
+      - 'docker-compose.yaml'
+      - '.github/workflows/tests.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [auth, orders, tickets, expiration]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            common/package-lock.json
+            ${{ matrix.service }}/package-lock.json
+      - name: Install and build local common
+        run: npm --prefix common ci && npm --prefix common run test:ci
+      - name: Install root test tooling
+        run: npm ci --ignore-scripts
+      - name: Check manifest alignment
+        run: npm run test:manifests
+      - name: Install and test service
+        run: npm --prefix ${{ matrix.service }} ci && npm --prefix ${{ matrix.service }} run typecheck && npm --prefix ${{ matrix.service }} run test:ci
+
+  client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm --prefix client ci
+      - run: npm ci --ignore-scripts
+      - run: npm run test:manifests && npm run test:routing && npm --prefix client run build
+
+  broker:
+    runs-on: ubuntu-latest
+    env:
+      NATS_TEST_URL: nats://127.0.0.1:14222
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: docker run -d --name jetstream-test -p 127.0.0.1:14222:4222 nats:2.12-alpine --jetstream --store_dir /data
+      - run: npm --prefix common ci && npm --prefix common run test:broker
+      - if: failure()
+        run: docker logs jetstream-test
+      - if: always()
+        run: docker rm -f jetstream-test
+
+  acceptance:
+    runs-on: ubuntu-latest
+    env:
+      ORDER_EXPIRATION_SECONDS: '15'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: docker compose up --build -d
+      - run: npm ci --ignore-scripts
+      - run: npm run test:acceptance
+      - if: failure()
+        run: docker compose logs --tail=100
+      - if: always()
+        run: docker compose down

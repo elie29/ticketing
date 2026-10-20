@@ -1,0 +1,235 @@
+x-backend-environment: &backend-environment
+  JWT_KEY: ${JWT_KEY:-local-development-only-change-me}
+  MONGO_USR: ${MONGO_ROOT_USERNAME:-root}
+  MONGO_PWD: ${MONGO_ROOT_PASSWORD:-local-dev-password}
+
+x-api-healthcheck: &api-healthcheck
+  test:
+    - CMD
+    - node
+    - -e
+    - "require('http').get('http://127.0.0.1:' + process.env.SERVER_PORT, response => process.exit(response.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
+  interval: 10s
+  timeout: 5s
+  start_period: 20s
+  retries: 12
+
+services:
+  common:
+    build:
+      context: .
+      dockerfile: common/Dockerfile
+      target: common
+    command: ["npm", "run", "build"]
+    volumes:
+      - common-build:/app/common/build
+    networks:
+      - ticketing-network
+
+  auth:
+    build:
+      context: .
+      dockerfile: common/Dockerfile
+      target: service
+      args:
+        SERVICE: auth
+    init: true
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      <<: *backend-environment
+      MONGO_URI: mongodb://mongo:27017/auth
+      SERVER_PORT: "3001"
+    depends_on:
+      common:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+    healthcheck: *api-healthcheck
+    volumes:
+      - common-build:/app/common/build:ro
+    networks:
+      - ticketing-network
+
+  tickets:
+    build:
+      context: .
+      dockerfile: common/Dockerfile
+      target: service
+      args:
+        SERVICE: tickets
+    init: true
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      <<: *backend-environment
+      MONGO_URI: mongodb://mongo:27017/tickets
+      SERVER_PORT: "3003"
+      NATS_CLIENT: tickets
+      NATS_URL: nats://nats:4222
+    depends_on:
+      common:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck: *api-healthcheck
+    volumes:
+      - common-build:/app/common/build:ro
+    networks:
+      - ticketing-network
+
+  orders:
+    build:
+      context: .
+      dockerfile: common/Dockerfile
+      target: service
+      args:
+        SERVICE: orders
+    init: true
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      <<: *backend-environment
+      MONGO_URI: mongodb://mongo:27017/orders
+      SERVER_PORT: "3002"
+      ORDER_EXPIRATION_SECONDS: ${ORDER_EXPIRATION_SECONDS:-900}
+      NATS_CLIENT: orders
+      NATS_URL: nats://nats:4222
+    depends_on:
+      common:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    healthcheck: *api-healthcheck
+    volumes:
+      - common-build:/app/common/build:ro
+    networks:
+      - ticketing-network
+
+  expiration:
+    build:
+      context: .
+      dockerfile: common/Dockerfile
+      target: service
+      args:
+        SERVICE: expiration
+    init: true
+    restart: unless-stopped
+    environment:
+      NATS_CLIENT: expiration
+      NATS_URL: nats://nats:4222
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      common:
+        condition: service_completed_successfully
+      nats:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - common-build:/app/common/build:ro
+    networks:
+      - ticketing-network
+
+  client:
+    build: ./client
+    init: true
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      API_BASE_URL: http://client:3000
+      AUTH_API_URL: http://auth:3001
+      ORDERS_API_URL: http://orders:3002
+      TICKETS_API_URL: http://tickets:3003
+    depends_on:
+      auth:
+        condition: service_healthy
+      orders:
+        condition: service_healthy
+      tickets:
+        condition: service_healthy
+    networks:
+      - ticketing-network
+
+  mongo:
+    image: docker.io/library/mongo
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-local-dev-password}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "mongosh --quiet --username \"$$MONGO_INITDB_ROOT_USERNAME\" --password \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval \"quit(db.adminCommand('ping').ok ? 0 : 1)\""
+      interval: 5s
+      timeout: 5s
+      start_period: 20s
+      retries: 20
+    networks:
+      - ticketing-network
+
+  mongo-express:
+    profiles: [tools]
+    image: docker.io/library/mongo-express
+    restart: always
+    ports:
+      - 18081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME:-root}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:-local-dev-password}
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: local-dev-password
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - ticketing-network
+  nats:
+    image: docker.io/library/nats:2.12-alpine
+    restart: always
+    ports:
+      - 4222:4222
+      - 8222:8222
+    command: ["--jetstream", "--store_dir", "/data", "--http_port", "8222"]
+    volumes:
+      - jetstream-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - ticketing-network
+
+  redis:
+    image: docker.io/library/redis
+    restart: always
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - ticketing-network
+
+networks:
+  ticketing-network:
+
+volumes:
+  common-build:
+  jetstream-data:

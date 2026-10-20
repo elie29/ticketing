@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'IBM Plex Sans', sans-serif;
+}
+
+* { letter-spacing: 0; }
+body { margin: 0; color: #1c2521; background: #f7f9f8; font-family: var(--font-sans); }
+button, input, select { font: inherit; }
+button:not(:disabled), a, select { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled) { cursor: pointer; }
+:focus-visible { outline: 3px solid #148263; outline-offset: 4px; }
+::selection { background: #c9efdf; }
+.page-grid { background-image: linear-gradient(#e8eeeb 1px, transparent 1px); background-size: 100% 48px; }
+.button { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 6px; padding: 9px 16px; font-size: 14px; font-weight: 500; text-align: center; transition: background-color 150ms, border-color 150ms; }
+.button:disabled { cursor: not-allowed; opacity: .5; }
+.button-primary { background: #176b50; color: white; }
+.button-primary:hover:not(:disabled) { background: #10543e; }
+.button-secondary { border-color: #cdd8d1; background: white; color: #273b30; }
+.button-secondary:hover:not(:disabled) { background: #f0f5f2; }
+.button-danger { border-color: #e6b5ab; background: #fff5f2; color: #9b3826; }
+.button-danger:hover:not(:disabled) { background: #ffe7df; }
+.field { display: block; width: 100%; min-height: 46px; border: 1px solid #c8d4cd; border-radius: 6px; background: white; padding: 11px 13px; color: #1c2521; }
+.field-search { padding-left: 40px; }
+.field[aria-invalid='true'] { border-color: #bb4d37; }
+.field::placeholder { color: #7a8880; }
+.page-enter { animation: page-enter 240ms ease-out both; }
+@keyframes page-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .page-enter { animation: none; } * { transition: none !important; } }

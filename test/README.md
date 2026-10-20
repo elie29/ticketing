@@ -1,0 +1,11 @@
+# Root Verification
+
+All automated suites use Vitest. Install dependencies with the root installer, then prepare the real stack with `npm run compose:acceptance` before running `npm test`.
+
+- [package-manifests.test.cjs](package-manifests.test.cjs): Node/private-package/dependency alignment, embedded local common lock metadata, script consistency and external backend test layout.
+- [compose.test.cjs](compose.test.cjs): engine precedence, platform branches and non-destructive override forwarding/error propagation.
+- [acceptance/ticketing.test.cjs](acceptance/ticketing.test.cjs): rendered pages, cookies, authorization, validation, real reservation/cancellation and automatic expiration/re-reservation through MongoDB, Redis/Bull and JetStream.
+
+Acceptance creates unique test accounts/tickets. Use only a development/test stack; `ACCEPTANCE_BASE_URL` can target another frontend. The short test lifetime is 15 seconds; ordinary development is 900 seconds. Restore orders without the override afterward.
+
+Service unit tests live under each package's `test/` folder, not `src/`. Client tests are under [client/test](../client/test). Shared unit contracts and the separate isolated broker suite are documented in [common/README.md](../common/README.md). Real broker tests are an explicit additional gate, not silently skipped cases in ordinary unit runs.
