@@ -16,10 +16,12 @@
     "test:manifests": "node scripts/manage-packages.cjs vitest test/package-manifests.test.cjs test/compose.test.cjs",
     "test:services": "node scripts/manage-packages.cjs test",
     "test:acceptance": "node scripts/manage-packages.cjs vitest test/acceptance/ticketing.test.cjs",
-    "test:routing": "node scripts/manage-packages.cjs vitest client/test"
+    "test:routing": "node scripts/manage-packages.cjs vitest client/test",
+    "format": "prettier --write \"**/*.md\""
   },
   "devDependencies": {
     "concurrently": "^10.0.6",
+    "prettier": "3.9.10",
     "vitest": "^5.0.5"
   }
 }
