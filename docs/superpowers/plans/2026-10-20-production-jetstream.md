@@ -96,6 +96,7 @@ Implementation specification: [../specs/2026-10-20-production-jetstream-design.m
 - 2026-10-20 - User explicitly requested implementing the whole proposed production Compose setup, JetStream migration, and service READMEs. Redis Streams was discussed but not selected.
 - 2026-10-20 - Preserve existing frontend work and development workflows. Linux Docker is the deployment target; WSL is not a production dependency.
 - 2026-10-20 - No automatic STAN history conversion or live production cutover. Use an isolated broker for verification and separate production project/data names.
+- 2026-10-20 - Tasks 3-4 (production Compose) are superseded by `2026-10-20-prod-compose-nginx.md`; the production path is now tracked there.
 
 ## Task 7 - Standardize Package-Level Test Folders
 
