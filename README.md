@@ -169,17 +169,23 @@ The client supports ticket search, reservation, confirmed cancellation, server-s
 
 ## Tests
 
-Install dependencies and start the full container stack before running the complete gate:
+Install dependencies, then run the default gate. It needs no container stack:
 
 ```bash
 npm run install
-npm run compose:acceptance
 npm test
+```
+
+Start the full container stack before running the complete gate, which adds live acceptance:
+
+```bash
+npm run compose:acceptance
+npm run test:all
 ```
 
 All automated suites use Vitest 5 on Node 24, including the HTTP acceptance and routing tests. Vitest handles TypeScript directly; Jest, SWC test transforms, and the Node test runner are no longer required. TypeScript typechecks remain separate from test execution.
 
-`npm test` runs manifest/Compose checks, client routing/helper checks, common HTTP/JetStream contracts, all four backend suites, shared/backend typechecks, the frontend production build, and live acceptance. The complete root command passed locally on Node 24 after moving all backend tests outside source: 100 tests passed with no skipped tests, plus typechecks and the client build. Acceptance used real MongoDB, Redis/Bull, and JetStream. A new GitHub Actions run has not been verified. The Next build is a compilation check, not a production Docker deliverable.
+`npm test` runs manifest/Compose checks, common HTTP/JetStream contracts, all four backend suites, shared/backend typechecks, the frontend production build, and client routing/helper checks. None of these require Docker or Podman; the Compose dispatch check uses a stub engine. `npm run test:all` adds live acceptance against the running stack. The complete root command passed locally on Node 24 after moving all backend tests outside source: 100 tests passed with no skipped tests, plus typechecks and the client build. Acceptance used real MongoDB, Redis/Bull, and JetStream. A new GitHub Actions run has not been verified. The Next build is a compilation check, not a production Docker deliverable.
 
 Each backend keeps specs, setup and mock factories in `test/` beside `src/`. Root, common and client retain their existing external test folders. No backend test-only code remains in source.
 
