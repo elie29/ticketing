@@ -1,7 +1,7 @@
 x-backend-environment: &backend-environment
-  JWT_KEY: ${JWT_KEY:-local-development-only-change-me}
+  JWT_KEY: ${JWT_KEY:?JWT_KEY is required; set it in .env (see .env.example)}
   MONGO_USR: ${MONGO_ROOT_USERNAME:-root}
-  MONGO_PWD: ${MONGO_ROOT_PASSWORD:-local-dev-password}
+  MONGO_PWD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD is required; set it in .env (see .env.example)}
 
 x-api-healthcheck: &api-healthcheck
   test:
@@ -15,14 +15,20 @@ x-api-healthcheck: &api-healthcheck
   retries: 12
 
 services:
-  common:
+  nginx:
     build:
       context: .
-      dockerfile: common/Dockerfile
-      target: common
-    command: ["npm", "run", "build"]
-    volumes:
-      - common-build:/app/common/build
+      dockerfile: client/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    depends_on:
+      auth:
+        condition: service_healthy
+      tickets:
+        condition: service_healthy
+      orders:
+        condition: service_healthy
     networks:
       - ticketing-network
 
@@ -35,20 +41,14 @@ services:
         SERVICE: auth
     init: true
     restart: unless-stopped
-    ports:
-      - "3001:3001"
     environment:
       <<: *backend-environment
       MONGO_URI: mongodb://mongo:27017/auth
       SERVER_PORT: "3001"
     depends_on:
-      common:
-        condition: service_completed_successfully
       mongo:
         condition: service_healthy
     healthcheck: *api-healthcheck
-    volumes:
-      - common-build:/app/common/build:ro
     networks:
       - ticketing-network
 
@@ -61,8 +61,6 @@ services:
         SERVICE: tickets
     init: true
     restart: unless-stopped
-    ports:
-      - "3003:3003"
     environment:
       <<: *backend-environment
       MONGO_URI: mongodb://mongo:27017/tickets
@@ -70,15 +68,11 @@ services:
       NATS_CLIENT: tickets
       NATS_URL: nats://nats:4222
     depends_on:
-      common:
-        condition: service_completed_successfully
       mongo:
         condition: service_healthy
       nats:
         condition: service_healthy
     healthcheck: *api-healthcheck
-    volumes:
-      - common-build:/app/common/build:ro
     networks:
       - ticketing-network
 
@@ -91,8 +85,6 @@ services:
         SERVICE: orders
     init: true
     restart: unless-stopped
-    ports:
-      - "3002:3002"
     environment:
       <<: *backend-environment
       MONGO_URI: mongodb://mongo:27017/orders
@@ -101,15 +93,11 @@ services:
       NATS_CLIENT: orders
       NATS_URL: nats://nats:4222
     depends_on:
-      common:
-        condition: service_completed_successfully
       mongo:
         condition: service_healthy
       nats:
         condition: service_healthy
     healthcheck: *api-healthcheck
-    volumes:
-      - common-build:/app/common/build:ro
     networks:
       - ticketing-network
 
@@ -128,46 +116,19 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
     depends_on:
-      common:
-        condition: service_completed_successfully
       nats:
         condition: service_healthy
       redis:
-        condition: service_healthy
-    volumes:
-      - common-build:/app/common/build:ro
-    networks:
-      - ticketing-network
-
-  client:
-    build: ./client
-    init: true
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      API_BASE_URL: http://client:3000
-      AUTH_API_URL: http://auth:3001
-      ORDERS_API_URL: http://orders:3002
-      TICKETS_API_URL: http://tickets:3003
-    depends_on:
-      auth:
-        condition: service_healthy
-      orders:
-        condition: service_healthy
-      tickets:
         condition: service_healthy
     networks:
       - ticketing-network
 
   mongo:
-    image: docker.io/library/mongo
+    image: docker.io/library/mongo:9.0
     restart: always
-    ports:
-      - 27017:27017
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-root}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-local-dev-password}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD is required; set it in .env (see .env.example)}
     healthcheck:
       test:
         - CMD-SHELL
@@ -179,30 +140,9 @@ services:
     networks:
       - ticketing-network
 
-  mongo-express:
-    profiles: [tools]
-    image: docker.io/library/mongo-express
-    restart: always
-    ports:
-      - 18081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME:-root}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:-local-dev-password}
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: local-dev-password
-    depends_on:
-      mongo:
-        condition: service_healthy
-    networks:
-      - ticketing-network
   nats:
     image: docker.io/library/nats:2.12-alpine
     restart: always
-    ports:
-      - 4222:4222
-      - 8222:8222
     command: ["--jetstream", "--store_dir", "/data", "--http_port", "8222"]
     volumes:
       - jetstream-data:/data
@@ -215,10 +155,8 @@ services:
       - ticketing-network
 
   redis:
-    image: docker.io/library/redis
+    image: docker.io/library/redis:7-alpine
     restart: always
-    ports:
-      - 6379:6379
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -231,5 +169,4 @@ networks:
   ticketing-network:
 
 volumes:
-  common-build:
   jetstream-data:

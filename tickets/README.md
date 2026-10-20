@@ -32,4 +32,4 @@ npm --prefix tickets run test:ci
 
 [test/routes](test/routes), [test/models](test/models) and [test/events/listeners](test/events/listeners) retain HTTP, concurrency and event-handler assertions. [test/setup.ts](test/setup.ts) uses temporary MongoDB and explicitly installs the [NATS mock](test/mocks/nats-wrapper.ts). Tests and mocks are outside production source. Watch: `npm --prefix tickets run test:watch`.
 
-The container setup is for development only. See [root documentation](../README.md) for setup and STAN-to-JetStream cutover caveats.
+The container runs in the production Compose stack behind nginx (`/api/tickets*`). See [root documentation](../README.md) for setup and STAN-to-JetStream cutover caveats.

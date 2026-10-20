@@ -12,4 +12,5 @@ for service in auth tickets orders expiration; do
 	npm --prefix "$ROOT_DIR/$service" run test:ci "$@"
 done
 
+npm --prefix "$ROOT_DIR/client" run lint
 npm --prefix "$ROOT_DIR/client" run build

@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const { setTimeout: delay } = require('node:timers/promises');
 
-const baseURL = process.env.ACCEPTANCE_BASE_URL || 'http://localhost:3000';
+const baseURL = process.env.ACCEPTANCE_BASE_URL || 'http://localhost';
 const requestTimeout = 15000;
 const eventTimeout = 10000;
 
@@ -80,21 +80,28 @@ describe('Ticketing acceptance through the frontend API proxy', {
     }, 60000);
   });
 
-  it('renders the ticket catalogue, signup, and signin pages', async () => {
+  it('serves the app shell for page URLs and leaves API paths to the services', async () => {
     const client = createClient();
-    for (const [pathname, expectedText] of [
-      ['/', 'Tickets'],
-      ['/auth/signup', 'Sign Up'],
-      ['/auth/signin', 'Sign In'],
-    ]) {
+    const expectShell = async pathname => {
       const html = expectStatus(await client(pathname), 200);
-      assert.equal(typeof html, 'string');
-      assert.ok(html.includes(expectedText), `${pathname} did not render ${expectedText}`);
-      assert.ok(!html.includes('Internal Server Error'), pathname);
-      if (pathname === '/') {
-        assert.match(html, /<h1\b[^>]*>Tickets<\/h1>/);
-        assert.ok(html.includes('id="ticket-search"'), 'The ticket catalogue search was not rendered');
-      }
+      assert.equal(typeof html, 'string', pathname);
+      assert.ok(html.includes('id="root"'), `${pathname} did not serve the app shell`);
+      assert.match(html, /<script[^>]+type="module"/, pathname);
+    };
+    for (const pathname of ['/', '/auth/signup', '/auth/signin']) await expectShell(pathname);
+
+    await signUp(client);
+    const ticket = expectStatus(await client('/api/tickets', {
+      method: 'POST',
+      body: { title: `Acceptance ${randomUUID()}`, price: 25 },
+    }), 201);
+    await expectShell(`/tickets/${ticket.id}`);
+
+    const missing = expectStatus(await client('/api/tickets/000000000000000000000000'), 404);
+    assert.notEqual(typeof missing, 'string', 'An unknown API path was answered by the app shell');
+    for (const pathname of ['/api/nope', '/api/users']) {
+      const unknown = expectStatus(await client(pathname), 404);
+      assert.ok(Array.isArray(unknown.errors), `${pathname} did not answer the JSON error shape`);
     }
   });
 

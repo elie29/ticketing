@@ -13,7 +13,7 @@ Give the project a production launch path with a single command, `docker compose
 - Backend images run as a non-root user with `NODE_ENV=production`; the `common` library is compiled into the image, with no shared build volume.
 - No database, broker or service port is published by the production file.
 - Production secrets (`JWT_KEY`, `MONGO_ROOT_PASSWORD`) are required and supplied through a `.env` file; a committed `.env.example` lists them with empty values, so `${VAR:?}` still fails right after `cp .env.example .env` until real values are generated (e.g. `openssl rand -base64 48`).
-- `npm run compose:infra` starts only Mongo, Redis and NATS, with host ports bound to `127.0.0.1`, for `npm run dev`. mongo-express stays opt-in through the `tools` profile, also bound to `127.0.0.1`.
+- `npm run compose:infra` starts Mongo, Redis and NATS for `npm run dev`, plus the Redis Insight UI, all with host ports bound to `127.0.0.1` (amended 2026-10-20: the admin UIs were opt-in under a `tools` profile; mongo-express was later removed in favour of MongoDB Compass on the host).
 - The acceptance suite and the CI acceptance job run against the production stack through nginx.
 
 ## Non-goals
@@ -43,11 +43,11 @@ Give the project a production launch path with a single command, `docker compose
 Files:
 
 - `docker-compose.yaml` — production stack: nginx, client, auth, tickets, orders, expiration, mongo, redis, nats. Only nginx has `ports`.
-- `docker-compose.dev.yaml` — overlay adding host ports for mongo (27017), redis (6379), nats (4222, 8222), all as `127.0.0.1:<port>:<port>`, and the mongo-express service under `profiles: [tools]` on `127.0.0.1:18081:8081`. mongo-express has basic auth enabled explicitly (`ME_CONFIG_BASICAUTH_ENABLED` and `ME_CONFIG_BASICAUTH` set to `"true"`), takes its login from required `MONGO_EXPRESS_USERNAME` / `MONGO_EXPRESS_PASSWORD`, and uses a pinned image tag. Loaded only by `compose:infra` and `compose:down`.
+- `docker-compose.dev.yaml` — overlay adding host ports for mongo (27017), redis (6379), nats (4222, 8222), all as `127.0.0.1:<port>:<port>`, and Redis Insight (`redis/redisinsight:2.70`) on `127.0.0.1:15540:5540` with a preconfigured connection to `redis:6379` through `RI_REDIS_HOST` / `RI_REDIS_PORT` / `RI_REDIS_ALIAS`. Redis Insight's free edition has no login; it relies on the loopback binding. Loaded only by `compose:infra` and `compose:down`.
 - `deploy/nginx/default.conf` — the four `location` blocks, forwarding `Host`, `X-Forwarded-For`, `X-Forwarded-Proto`.
 - `client/Dockerfile` — multi-stage: deps, build, run (`USER node`, `npm start`).
 - `common/Dockerfile` — `service` stage gains `ENV NODE_ENV=production` and `USER node`.
-- `.env.example` — `JWT_KEY`, `MONGO_ROOT_USERNAME`, `MONGO_ROOT_PASSWORD`, `HTTP_PORT`, `ORDER_EXPIRATION_SECONDS`, `MONGO_EXPRESS_USERNAME`, `MONGO_EXPRESS_PASSWORD`. Secret values (`JWT_KEY`, `MONGO_ROOT_PASSWORD`, `MONGO_EXPRESS_PASSWORD`) are empty. Root `.env` is git-ignored.
+- `.env.example` — `JWT_KEY`, `MONGO_ROOT_USERNAME`, `MONGO_ROOT_PASSWORD`, `HTTP_PORT`, `ORDER_EXPIRATION_SECONDS`. Secret values (`JWT_KEY`, `MONGO_ROOT_PASSWORD`) are empty. Root `.env` is git-ignored.
 
 Health: client gets a node one-liner healthcheck on `GET /`; nginx depends on client, auth, tickets and orders being healthy. Existing checks for the services, mongo, redis and nats are kept.
 

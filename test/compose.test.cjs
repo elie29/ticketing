@@ -34,3 +34,29 @@ test('native override forwards arguments, cwd and nonzero exit status', () => {
     assert.equal(report.cwd, root);
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
+
+test('actions target the prod stack, or the dev overlay for infra and teardown', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ticketing compose actions '));
+  const log = path.join(directory, 'calls.jsonl');
+  const file = path.join(directory, 'stub.cjs');
+  fs.writeFileSync(file, `require('fs').appendFileSync(${JSON.stringify(log)}, JSON.stringify(process.argv.slice(2)) + '\\n');`);
+  const root = path.resolve(__dirname, '..');
+  const calls = action => {
+    fs.rmSync(log, { force: true });
+    const result = spawnSync(process.execPath, ['--', path.join(root, 'scripts/manage-packages.cjs'), 'compose', action], {
+      encoding: 'utf8', env: { ...process.env, COMPOSE_BIN: JSON.stringify([process.execPath, '--', file]) },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    return fs.readFileSync(log, 'utf8').trim().split('\n').map(line => JSON.parse(line));
+  };
+  const dev = ['-f', 'docker-compose.yaml', '-f', 'docker-compose.dev.yaml'];
+  try {
+    assert.deepEqual(calls('up'), [['up', '--build', '-d']]);
+    assert.deepEqual(calls('acceptance'), [['up', '--build', '-d'], ['up', '-d', '--force-recreate', '--no-deps', 'orders']]);
+    assert.deepEqual(calls('infra'), [
+      [...dev, 'stop', 'nginx', 'auth', 'tickets', 'orders', 'expiration'],
+      [...dev, 'up', '-d', 'mongo', 'redis', 'nats', 'redisinsight'],
+    ]);
+    assert.deepEqual(calls('down'), [[...dev, 'down']]);
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});

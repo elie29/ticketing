@@ -1,0 +1,32 @@
+# Overlay for `npm run dev`: exposes the infra on 127.0.0.1 and adds the Redis Insight UI.
+# Usage: docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d mongo redis nats redisinsight
+
+services:
+  mongo:
+    ports:
+      - "127.0.0.1:27017:27017"
+
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  nats:
+    ports:
+      - "127.0.0.1:4222:4222"
+      - "127.0.0.1:8222:8222"
+
+  # The free edition has no login; it is reachable from this machine only.
+  redisinsight:
+    image: docker.io/redis/redisinsight:2.70
+    restart: always
+    ports:
+      - "127.0.0.1:15540:5540"
+    environment:
+      RI_REDIS_HOST: redis
+      RI_REDIS_PORT: "6379"
+      RI_REDIS_ALIAS: ticketing
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - ticketing-network

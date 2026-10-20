@@ -2,18 +2,18 @@
 
 ## Architecture
 
-Event-driven microservices. Each service owns its data (separate databases on the MongoDB server in Compose). The Next.js frontend proxies `/api` requests to the owning service. Backend services communicate asynchronously through NATS JetStream, using the event contracts defined in the local `common` package. No npm publication or Git push is required to use changes to the shared library.
+Event-driven microservices. Each service owns its data (separate databases on the MongoDB server in Compose). The frontend is a React single-page app built by Vite. In the production stack, nginx serves its static files and sends `/api` requests to the owning service; in development, the Vite dev server proxies `/api` itself. Backend services communicate asynchronously through NATS JetStream, using the event contracts defined in the local `common` package. No npm publication or Git push is required to use changes to the shared library.
 
 ```mermaid
 flowchart LR
-  user((User)) -->|HTTP request| client[client\nNext.js :3000]
-  client -.->|HTML / JSON response| user
-  client -->|/api/users| auth[auth :3001]
-  auth -.->|HTTP status / JSON / session cookie| client
-  client -->|/api/tickets| tickets[tickets :3003]
-  tickets -.->|HTTP status / JSON| client
-  client -->|/api/orders| orders[orders :3002]
-  orders -.->|HTTP status / JSON| client
+  user((User)) -->|HTTP request| nginx[nginx :80]
+  nginx -.->|app files / JSON response| user
+  nginx -->|/api/users| auth[auth :3001]
+  auth -.->|HTTP status / JSON / session cookie| nginx
+  nginx -->|/api/tickets| tickets[tickets :3003]
+  tickets -.->|HTTP status / JSON| nginx
+  nginx -->|/api/orders| orders[orders :3002]
+  orders -.->|HTTP status / JSON| nginx
 
   auth <-->|queries / results| authdb[(mongo)]
   tickets <-->|queries / results| ticketsdb[(mongo)]
@@ -53,8 +53,8 @@ STAN history and durable positions cannot be read by JetStream. Stop the old pub
 | `tickets` | Tickets for sale; a ticket is locked while an order holds it | `GET/POST /api/tickets`, `GET/PUT /api/tickets/:id` | `ticket:created`, `ticket:updated` | `order:created`, `order:cancelled` |
 | `orders` | Orders on tickets; keeps a local copy of tickets to validate them | `GET/POST /api/orders`, `GET/DELETE /api/orders/:id` | `order:created`, `order:cancelled` | `ticket:created`, `ticket:updated`, `expiration:complete` |
 | `expiration` | Schedules a delayed Bull job (Redis) when an order is created and fires `expiration:complete` when the delay elapses | – | `expiration:complete` | `order:created` |
-| `client` | Next.js front end | – | – | – |
-| `common` | Private local library: error classes, middlewares (auth, validation), base listener/publisher and event types; one-shot build service in Compose | – | – | – |
+| `client` | React single-page app built by Vite, served by nginx in production | – | – | – |
+| `common` | Private local library: error classes, middlewares (auth, validation), base listener/publisher and event types; compiled into each backend image | – | – | – |
 
 ### Order lifecycle
 
@@ -64,66 +64,67 @@ STAN history and durable positions cannot be read by JetStream. Stop the old pub
 4. When the job fires, `expiration` publishes `expiration:complete`.
 5. `orders` cancels the unpaid order and publishes `order:cancelled`, which releases the ticket in `tickets`.
 
-All application and infrastructure services are configured in `docker-compose.yaml`.
+`docker-compose.yaml` is the production stack. `docker-compose.dev.yaml` is an overlay that exposes the infrastructure to local development.
 
 ## Docker compose
 
 Run direct Compose commands from the repository root. No host Node installation or npm wrapper is needed for the full container stack. Docker Desktop works directly on Windows; Podman requires a Compose provider (validated in WSL with Podman 4.9.3 and podman-compose 1.6.0).
 
-The default file starts all applications, common builder, MongoDB, Redis and JetStream. Only mongo-express is opt-in through the `tools` profile. These containers are development-only; no production Docker targets or production Compose deployment are supplied.
-
-### Full container stack
+### Production stack
 
 ```bash
+cp .env.example .env   # then fill JWT_KEY and MONGO_ROOT_PASSWORD
 docker compose up --build -d
+docker compose ps
 ```
 
-Or with Podman in WSL/Linux:
+`.env` is git-ignored; only `.env.example` is committed, and it is the only env file in the repository. Generate each secret with `openssl rand -base64 48`. `JWT_KEY` and `MONGO_ROOT_PASSWORD` are required: Compose stops with a `JWT_KEY is required` message when `.env` is missing or still has the empty values from `.env.example`. Keep the same MongoDB credentials when reusing an initialized database.
 
-```bash
-podman compose up --build -d
-podman compose ps
+The stack is nginx, client, auth, tickets, orders, expiration, MongoDB, Redis and NATS JetStream. Only nginx publishes a port (`HTTP_PORT`, default `80`):
+
+```text
+http://localhost  -> nginx -> /api/users/*  -> auth:3001
+                           -> /api/tickets* -> tickets:3003
+                           -> /api/orders*  -> orders:3002
+                           -> /*            -> app files built by Vite (index.html fallback)
 ```
 
-Compose builds `common` as a one-shot service. Auth, tickets, orders, and expiration wait for it to finish successfully, then use its compiled output from the read-only `common-build` volume. A successfully exited `common` container is expected; it is a library builder, not an HTTP server. Application images use Node 24. Add `--profile tools` before `up` to include mongo-express.
+The nginx configuration is [deploy/nginx/default.conf](deploy/nginx/default.conf). The nginx image is built from [client/Dockerfile](client/Dockerfile): a Node 24 stage runs `vite build`, and nginx serves the result, answering every page URL with `index.html` (so deep links and reloads work) and returning 404 for unknown `/api` paths. `index.html` is never cached; hashed files under `/assets/` are cached for a year. There is no frontend server process. Backend images run as the `node` user with `NODE_ENV=production` and already contain the compiled common library. Application images use Node 24.
 
-Optional shortcut: `npm run compose:up`. Its engine selection is `COMPOSE_BIN` first, then native Windows Docker when on PATH, otherwise Windows WSL/Podman; on Linux prefer Podman, otherwise Docker. The selected engine is printed and failures retain their exit status without silently switching engines. `COMPOSE_BIN` is an executable path or a JSON array of executable/arguments, not an evaluated shell command. For Node-based overrides, use `--` before the script to prevent Node consuming forwarded options. Selector/stub tests cover these branches; an actual Docker Desktop daemon is not available here.
+Security limits: HTTP only (no TLS, no domain); session cookies are not marked `secure`; Redis and NATS have no authentication and rely on the internal Compose network.
+
+Optional shortcut: `npm run compose:up`. Its engine selection is `COMPOSE_BIN` first, then native Windows Docker when on PATH, otherwise Windows WSL/Podman; on Linux prefer Podman, otherwise Docker. The selected engine is printed and failures retain their exit status without silently switching engines. `COMPOSE_BIN` is an executable path or a JSON array of executable/arguments, not an evaluated shell command. For Node-based overrides, use `--` before the script to prevent Node consuming forwarded options. Selector/stub tests cover these branches.
 
 Host npm workflows require Node 24 (see `.nvmrc`). Install/update/test/dev commands still use WSL when launched on Windows so they use Linux-installed dependencies; Compose is routed before that relay.
 
-The shared multistage build lives in `common/Dockerfile`. Its `common` target compiles the library; its `service` target builds a backend selected by the `SERVICE` build argument. These Compose builds keep the repository root as their context so they can access both the shared library and consumer source. The client retains its own `client/Dockerfile`.
+The shared multistage build lives in `common/Dockerfile`. Its `common` target compiles the library; its `service` target builds a backend selected by the `SERVICE` build argument. These Compose builds keep the repository root as their context so they can access both the shared library and consumer source. The client has its own multistage `client/Dockerfile`.
 
-To build only the shared-library image:
-
-```bash
-podman compose build common
-```
-
-- Application: <http://localhost:3000>
-- Optional Mongo express: <http://localhost:18081> (development login: admin/local-dev-password)
+- Application: <http://localhost>
 - Stop the stack: `npm run compose:down`
 
 ### Infrastructure containers and local watch
 
 For application development, keep infrastructure in containers and run the apps from the checkout:
 
-Direct infrastructure startup is `docker compose up -d mongo redis nats` or `podman compose up -d mongo redis nats`. If full app containers are already running, stop `common auth tickets orders expiration client` first to avoid port conflicts; `npm run compose:infra` handles that switch and also stops mongo-express.
-
 ```bash
+cp .env.example .env   # once; infra mode needs the same secrets
 npm run install
 npm run compose:infra
 npm run dev
 ```
 
-`compose:infra` stops this project's application containers and mongo-express, then starts MongoDB, Redis, and NATS JetStream only. NATS is required by tickets, orders, and expiration, so MongoDB and Redis alone cannot support the complete application. For a database/cache-only task, `podman compose up -d mongo redis` selects just those two services.
+`compose:infra` stops this project's application containers and nginx, then starts MongoDB, Redis, NATS JetStream and Redis Insight with the dev overlay, which publishes every port on `127.0.0.1` only (27017, 6379, 4222, 8222 and 15540). NATS is required by tickets, orders and expiration, so MongoDB and Redis alone cannot support the complete application. The direct equivalent is `docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d mongo redis nats redisinsight`.
 
-`npm run dev` builds common once, then runs its TypeScript watcher, the four backend watchers, and the Next.js development server together. Backend source changes restart the affected service; compiled common changes are also included in backend watch paths. The client uses Next.js hot reload. Local development connects to the infrastructure's published localhost ports and uses localhost API proxy targets instead of container DNS names.
+`npm run dev` loads the root `.env` (variables already exported in the shell win), builds common once, then runs its TypeScript watcher, the four backend watchers and the Vite development server together. Backend source changes restart the affected service; compiled common changes are also included in backend watch paths. The client uses Vite hot reload, and the Vite dev server proxies `/api` to the localhost backends. It listens on `localhost` only, so use <http://localhost:3000>.
 
-Press Ctrl+C to stop the local watchers; infrastructure remains running until `npm run compose:down`. Stop the local dev command before switching back to `npm run compose:up`, since both modes use ports 3000-3003. Both modes serve the application at <http://localhost:3000>.
+Press Ctrl+C to stop the local watchers; infrastructure remains running until `npm run compose:down`. Development serves the application at <http://localhost:3000>.
 
-Compose's JWT and database credentials are development defaults, not production secrets. Set `JWT_KEY`, `MONGO_ROOT_USERNAME`, and `MONGO_ROOT_PASSWORD` in the environment before starting to override them. Keep the same MongoDB credentials when reusing an initialized database.
+Data browsers in infra mode:
 
-The client uses `API_BASE_URL` for server-side requests and `AUTH_API_URL`, `ORDERS_API_URL`, and `TICKETS_API_URL` for internal API rewrites. Full Compose sets these to service DNS names; the local dev launcher supplies localhost defaults. Browser requests remain on the frontend origin. The dev launcher also supplies development JWT, MongoDB, NATS, and Redis settings; exported environment values override its shared defaults.
+- MongoDB: use [MongoDB Compass](https://www.mongodb.com/products/tools/compass) on the host with `mongodb://root:<MONGO_ROOT_PASSWORD>@127.0.0.1:27017/?authSource=admin`.
+- Redis Insight, started by `compose:infra`: <http://127.0.0.1:15540>. Accept its EULA on first visit; the preconfigured `ticketing` connection to `redis:6379` then appears. Its free edition has no login, so it relies on the loopback binding, and its settings reset when the container is recreated.
+
+All client requests run in the browser on the frontend origin. In development, `AUTH_API_URL`, `ORDERS_API_URL` and `TICKETS_API_URL` set the Vite proxy targets; the local dev launcher supplies localhost defaults. Production needs none of them: nginx routes `/api`. The dev launcher also supplies development JWT, MongoDB, NATS and Redis defaults when neither the shell nor `.env` sets them.
 
 ## Shared library
 
@@ -144,9 +145,7 @@ npm run update
 npm run update -- --dry-run
 ```
 
-In local watch mode, common recompiles and affected backends restart automatically. Outside watch mode, rebuild with `npm --prefix common run build` and restart consumers. For containers, use `npm run compose:up` to rebuild the stack from current source. If Podman retains an old application container after rebuilding, recreate the affected service explicitly, for example `podman compose --profile app up -d --force-recreate --no-deps client`.
-
-If an existing `common-build` volume contains stale exports, rebuild its contents with `podman compose --profile app build common` followed by `podman compose --profile app run --rm common`, then recreate the affected backends. Do not delete database or broker volumes to refresh compiled code.
+In local watch mode, common recompiles and affected backends restart automatically. Outside watch mode, rebuild with `npm --prefix common run build` and restart consumers. For containers, use `npm run compose:up` to rebuild the images from current source; each backend image compiles its own copy of common. If Podman retains an old application container after rebuilding, recreate the affected service explicitly, for example `podman compose up -d --force-recreate --no-deps client`.
 
 All packages target Node 24 and use matching ranges for shared direct dependencies. `npm run test:manifests` checks that alignment, local common lock metadata, private/local package conventions, backend scripts, test layout and Compose dispatch.
 
@@ -185,13 +184,13 @@ npm run test:all
 
 All automated suites use Vitest 5 on Node 24, including the HTTP acceptance and routing tests. Vitest handles TypeScript directly; Jest, SWC test transforms, and the Node test runner are no longer required. TypeScript typechecks remain separate from test execution.
 
-`npm test` runs manifest/Compose checks, common HTTP/JetStream contracts, all four backend suites, shared/backend typechecks, the frontend production build, and client routing/helper checks. None of these require Docker or Podman; the Compose dispatch check uses a stub engine. `npm run test:all` adds live acceptance against the running stack. The complete root command passed locally on Node 24 after moving all backend tests outside source: 100 tests passed with no skipped tests, plus typechecks and the client build. Acceptance used real MongoDB, Redis/Bull, and JetStream. A new GitHub Actions run has not been verified. The Next build is a compilation check, not a production Docker deliverable.
+`npm test` runs manifest/Compose checks, common HTTP/JetStream contracts, all four backend suites, shared/backend typechecks, an undefined-name lint of the client (ESLint), the frontend production build, and client routing/helper checks. None of these require Docker or Podman; the Compose dispatch check uses a stub engine. `npm run test:all` adds live acceptance against the running stack. The complete root command passed locally on Node 24 after moving all backend tests outside source: 100 tests passed with no skipped tests, plus typechecks and the client build. Acceptance used real MongoDB, Redis/Bull, and JetStream. A new GitHub Actions run has not been verified.
 
 Each backend keeps specs, setup and mock factories in `test/` beside `src/`. Root, common and client retain their existing external test folders. No backend test-only code remains in source.
 
 The [isolated broker suite](common/README.md#real-broker-verification) additionally passed 2 tests for replay, independent consumers, durable resume and redelivery, bringing executed automated checks to 102. CI has a separate real-broker job. Desktop/mobile browser checks also exercised signup, ticket creation, reservation, cancellation, release and order history; focus/label checks and overflow checks passed at the inspected viewports. These are focused checks, not a comprehensive external security/accessibility audit.
 
-`compose:acceptance` builds/starts the real application stack with a 15-second order lifetime so the automatic-expiration scenario finishes quickly. Normal startup keeps the 900-second default. The orders service validates `ORDER_EXPIRATION_SECONDS` as a positive integer. Recreate orders with the normal environment when returning to ordinary development, for example `podman compose --profile app up -d --force-recreate --no-deps orders` with no lifetime override exported.
+`compose:acceptance` builds/starts the real application stack with a 15-second order lifetime so the automatic-expiration scenario finishes quickly. Normal startup keeps the 900-second default. The orders service validates `ORDER_EXPIRATION_SECONDS` as a positive integer. Recreate orders with the normal environment when returning to ordinary development, for example `docker compose up -d --force-recreate --no-deps orders` with no lifetime override exported.
 
 Run individual gates from the root:
 
@@ -204,23 +203,27 @@ npm run test:acceptance
 
 `test:services` runs common/backend checks and the frontend production build without requiring the Compose stack. Backend suites start temporary MongoDB instances; the first run may need to download a MongoDB binary. Run this build-oriented command outside a running local `npm run dev`, since both use the client's build directory. Each backend also exposes `typecheck`, `test` (one Vitest run), `test:watch` (interactive Vitest watch), and `test:ci` scripts through `npm --prefix <service> run <script>`. Root test launchers use WSL from Windows so they resolve the same Linux-installed tooling as install/update.
 
-Acceptance tests need a running application: either full Compose or local watch mode backed by infrastructure containers. They wait for frontend/API readiness, then exercise rendered pages, authentication cookies, validation errors, authorization, and event-driven ticket reservation/cancellation. The automatic-expiration test observes the returned `expiresAt`, checks that the order is not cancelled early, waits for Redis/Bull and NATS to cancel it and release its ticket, and verifies the ticket can be reserved again. It does not manually cancel the order whose automatic expiration is being checked.
+Acceptance tests need a running application: either full Compose or local watch mode backed by infrastructure containers. They wait for frontend/API readiness, then check that page URLs (including a deep link) return the app shell while API paths reach the services, and exercise authentication cookies, validation errors, authorization, and event-driven ticket reservation/cancellation. The automatic-expiration test observes the returned `expiresAt`, checks that the order is not cancelled early, waits for Redis/Bull and NATS to cancel it and release its ticket, and verifies the ticket can be reserved again. It does not manually cancel the order whose automatic expiration is being checked.
 
-The suite creates uniquely named test users and tickets and cleans up its extra reservation. Use a development/test stack, not production. Set `ACCEPTANCE_BASE_URL` to target another frontend. On a normally configured stack the expiration case can take fifteen minutes; use `compose:acceptance` for the short test lifetime. The real brokers, database, and expiration worker are not mocked in acceptance tests.
+The suite creates uniquely named test users and tickets and cleans up its extra reservation. Use a development/test stack, not production. The suite targets nginx at `http://localhost` by default; set `ACCEPTANCE_BASE_URL=http://localhost:3000` for local watch mode, or another URL for a different frontend. On a normally configured stack the expiration case can take fifteen minutes; use `compose:acceptance` for the short test lifetime. The real brokers, database, and expiration worker are not mocked in acceptance tests.
 
 ## Ports
+
+Production stack: only nginx is published, on `HTTP_PORT` (default 80). Inside the Compose network and in local watch mode:
 
 - auth: 3001
 - client: 3000
 - orders: 3002
 - tickets: 3003
 
+Infra mode publishes MongoDB 27017, Redis 6379, NATS 4222/8222 and Redis Insight 15540, all on `127.0.0.1`.
+
 ## Github actions
 
 ### Test
 
 - The tests workflow runs `auth`, `orders`, `tickets`, and `expiration` as parallel matrix jobs on Node 24. Each job clean-installs and tests common first, installs root Vitest tooling with lifecycle scripts disabled, checks manifest alignment, then clean-installs, typechecks, and tests its service. A failing service does not cancel the others.
-- A separate client job clean-installs the frontend, runs manifest/routing checks, and builds Next.js for production.
+- A separate client job clean-installs the frontend, runs manifest/routing checks, and builds the client with Vite.
 - A separate broker job starts a disposable JetStream instance and checks replay, independent groups, durable resume and redelivery.
-- An acceptance job builds/starts default Compose with `ORDER_EXPIRATION_SECONDS=15`, installs root Vitest tooling, runs all six acceptance tests, prints container logs on failure, and stops the stack afterward.
-- The workflow runs on pull requests and pushes to `main` when package source, root scripts/tests, the root manifest/lockfile/Vitest config, or the workflow changes, and supports manual dispatch. The Vitest migration's GitHub-hosted run has not been independently verified; the complete local root gate has passed.
+- An acceptance job builds/starts the production Compose stack with `ORDER_EXPIRATION_SECONDS=15` and throwaway CI-only `JWT_KEY` / `MONGO_ROOT_PASSWORD` values, so the tests go through nginx, installs root Vitest tooling, runs all six acceptance tests, prints container logs on failure, and stops the stack afterward.
+- The workflow runs on pull requests and pushes to `main` when package source, root scripts/tests, the root manifest/lockfile/Vitest config, the Compose files, the nginx configuration, or the workflow changes, and supports manual dispatch. The Vitest migration's GitHub-hosted run has not been independently verified; the complete local root gate has passed.

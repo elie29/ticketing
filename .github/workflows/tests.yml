@@ -18,6 +18,8 @@ on:
       - 'package-lock.json'
       - 'vitest.config.mts'
       - 'docker-compose.yaml'
+      - 'docker-compose.dev.yaml'
+      - 'deploy/**'
       - '.github/workflows/tests.yml'
   pull_request:
     paths:
@@ -33,6 +35,8 @@ on:
       - 'package-lock.json'
       - 'vitest.config.mts'
       - 'docker-compose.yaml'
+      - 'docker-compose.dev.yaml'
+      - 'deploy/**'
       - '.github/workflows/tests.yml'
 
 jobs:
@@ -93,6 +97,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ORDER_EXPIRATION_SECONDS: '15'
+      # Throwaway CI-only values; the prod Compose file requires both.
+      JWT_KEY: ci-acceptance-only-jwt-key
+      MONGO_ROOT_PASSWORD: ci-acceptance-only-mongo-password
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6

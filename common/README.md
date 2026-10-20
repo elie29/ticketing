@@ -37,4 +37,4 @@ podman stop ticketing-broker-verification
 
 Docker users can substitute `docker` for `podman`. Stop the temporary container even when a test fails. The suite checks file-backed replay, independent groups, durable resume after reconnect and automatic redelivery after missing acknowledgement. CI runs it in a separate broker job. It does not claim an exactly-once guarantee or certify broker-host disaster recovery.
 
-The [root watch launcher](../README.md#infrastructure-containers-and-local-watch) recompiles common and restarts dependent backends. Compose's one-shot common builder shares compiled output through `common-build`; a successfully exited builder is expected. [Dockerfile](Dockerfile) also builds the development backend target selected by `SERVICE`. It has no production image target.
+The [root watch launcher](../README.md#infrastructure-containers-and-local-watch) recompiles common and restarts dependent backends. [Dockerfile](Dockerfile) compiles common in its `common` stage and copies the build into the `service` target selected by `SERVICE`, which runs as the `node` user with `NODE_ENV=production`; Compose uses that target for every backend.

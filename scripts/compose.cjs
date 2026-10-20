@@ -40,16 +40,18 @@ function runCompose(options, root) {
     if (result.error) console.error(`${engine.label}: ${result.error.message}. Check the selected engine and Compose provider.`);
     return result.status ?? (result.signal === 'SIGINT' ? 130 : 1);
   }
+  // The dev overlay publishes the infra ports on 127.0.0.1 and defines the Redis Insight UI.
+  const dev = ['-f', 'docker-compose.yaml', '-f', 'docker-compose.dev.yaml'];
   if (action === 'infra') {
-    const status = execute(['--profile', 'tools', 'stop', 'common', 'auth', 'tickets', 'orders', 'expiration', 'client', 'mongo-express']);
-    return status || execute(['up', '-d', ...args, 'mongo', 'redis', 'nats']);
+    const status = execute([...dev, 'stop', 'nginx', 'auth', 'tickets', 'orders', 'expiration']);
+    return status || execute([...dev, 'up', '-d', ...args, 'mongo', 'redis', 'nats', 'redisinsight']);
   }
   if (action === 'acceptance') {
     const status = execute(['up', '--build', '-d', ...args]);
     return status || execute(['up', '-d', '--force-recreate', '--no-deps', 'orders']);
   }
   if (action === 'up') return execute(['up', '--build', '-d', ...args]);
-  if (action === 'down') return execute(['--profile', 'tools', 'down', ...args]);
+  if (action === 'down') return execute([...dev, 'down', ...args]);
   return execute([action, ...args]);
 }
 

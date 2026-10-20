@@ -25,4 +25,4 @@ npm --prefix expiration run test:ci
 
 [test/queues/expiration-queue.test.ts](test/queues/expiration-queue.test.ts) checks scheduling/acknowledgement ordering, failed scheduling, awaited publication and failed publication. Its Bull and [NATS mock](test/mocks/nats-wrapper.ts) are isolated from live infrastructure. Watch: `npm --prefix expiration run test:watch`.
 
-The root live acceptance suite additionally proves automatic expiration and ticket re-reservation through the real worker. Container configuration is development-only.
+The root live acceptance suite additionally proves automatic expiration and ticket re-reservation through the real worker.

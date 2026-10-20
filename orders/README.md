@@ -30,4 +30,4 @@ npm --prefix orders run test:ci
 
 Run these from the repository root after building common. Specs are in [test/routes](test/routes), [test/events/listeners](test/events/listeners) and [test/config.test.ts](test/config.test.ts). [test/setup.ts](test/setup.ts) starts temporary MongoDB and explicitly wires the mock transport. Watch: `npm --prefix orders run test:watch`.
 
-Live automatic-expiration coverage is in the root acceptance suite and uses real MongoDB, Bull/Redis and JetStream. Containers are development-only.
+Live automatic-expiration coverage is in the root acceptance suite and uses real MongoDB, Bull/Redis and JetStream.
