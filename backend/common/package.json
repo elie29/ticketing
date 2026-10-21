@@ -16,10 +16,10 @@
     "build": "npm run clean && tsc",
     "dev": "tsc --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --config ../vitest.config.mts --project common",
-    "test:watch": "vitest --config ../vitest.config.mts --project common",
+    "test": "vitest run --config ../../vitest.config.mts --project common",
+    "test:watch": "vitest --config ../../vitest.config.mts --project common",
     "test:ci": "npm run build && npm test",
-    "test:broker": "npm run build && vitest run --config ../vitest.config.mts --project common-broker"
+    "test:broker": "npm run build && vitest run --config ../../vitest.config.mts --project common-broker"
   },
   "keywords": [
     "ticketing",

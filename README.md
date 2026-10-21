@@ -97,7 +97,7 @@ Optional shortcut: `npm run compose:up`. Its engine selection is `COMPOSE_BIN` f
 
 Host npm workflows require Node 24 (see `.nvmrc`). Install/update/test/dev commands still use WSL when launched on Windows so they use Linux-installed dependencies; Compose is routed before that relay.
 
-The shared multistage build lives in `common/Dockerfile`. Its `common` target compiles the library; its `service` target builds a backend selected by the `SERVICE` build argument. These Compose builds keep the repository root as their context so they can access both the shared library and consumer source. The client has its own multistage `client/Dockerfile`.
+The shared multistage build lives in `backend/common/Dockerfile`. Its `common` target compiles the library; its `service` target builds a backend selected by the `SERVICE` build argument. These Compose builds keep the repository root as their context so they can access both the shared library and consumer source. The client has its own multistage `client/Dockerfile`.
 
 - Application: <http://localhost>
 - Stop the stack: `npm run compose:down`
@@ -129,7 +129,7 @@ All client requests run in the browser on the frontend origin. In development, `
 
 ## Shared library
 
-Auth, tickets, orders, and expiration declare `@elie29/ticketing-common` as `file:../common`. The package is private and has no publish script. Its JavaScript and TypeScript declarations are generated in `common/build`.
+Auth, tickets, orders, and expiration declare `@elie29/ticketing-common` as `file:../common`. The package is private and has no publish script. Its JavaScript and TypeScript declarations are generated in `backend/common/build`.
 
 For development outside containers, run dependency commands from the repository root inside WSL with Node 24:
 
@@ -146,17 +146,19 @@ npm run update
 npm run update -- --dry-run
 ```
 
-In local watch mode, common recompiles and affected backends restart automatically. Outside watch mode, rebuild with `npm --prefix common run build` and restart consumers. For containers, use `npm run compose:up` to rebuild the images from current source; each backend image compiles its own copy of common. If Podman retains an old application container after rebuilding, recreate the affected service explicitly, for example `podman compose up -d --force-recreate --no-deps client`.
+In local watch mode, common recompiles and affected backends restart automatically. Outside watch mode, rebuild with `npm --prefix backend/common run build` and restart consumers. For containers, use `npm run compose:up` to rebuild the images from current source; each backend image compiles its own copy of common. If Podman retains an old application container after rebuilding, recreate the affected service explicitly, for example `podman compose up -d --force-recreate --no-deps client`.
 
 All packages target Node 24 and use matching ranges for shared direct dependencies. `npm run test:manifests` checks that alignment, local common lock metadata, private/local package conventions, backend scripts, test layout and Compose dispatch.
 
 ## Package Documentation
 
-- [Auth](auth/README.md): users, password hashing and cookie sessions.
-- [Tickets](tickets/README.md): ownership, versioning and reservations.
-- [Orders](orders/README.md): ticket projection and order lifecycle.
-- [Expiration](expiration/README.md): Bull scheduling and JetStream publication.
-- [Common](common/README.md): local contracts, middleware and transport.
+The four backend services and the shared common library live under [backend/](backend); the client, deployment files, scripts and root tests stay at the repository root. Run package commands from the root with `npm --prefix backend/<name> run <script>` (or `npm --prefix client run <script>`).
+
+- [Auth](backend/auth/README.md): users, password hashing and cookie sessions.
+- [Tickets](backend/tickets/README.md): ownership, versioning and reservations.
+- [Orders](backend/orders/README.md): ticket projection and order lifecycle.
+- [Expiration](backend/expiration/README.md): Bull scheduling and JetStream publication.
+- [Common](backend/common/README.md): local contracts, middleware and transport.
 - [Client](client/README.md): catalogue, ticket creation/editing, owned orders and authentication screens.
 - [Scripts](scripts/README.md): portable development command dispatch.
 - [Root tests](test/README.md): live-stack requirements and regression coverage.
@@ -185,13 +187,13 @@ npm run test:all
 
 All automated suites use Vitest 5 on Node 24, including the HTTP acceptance and routing tests. Vitest handles TypeScript directly; Jest, SWC test transforms, and the Node test runner are no longer required. TypeScript typechecks remain separate from test execution.
 
-A single [vitest.config.mts](vitest.config.mts) at the root defines every suite as a named project: `root`, `client`, `common`, `common-broker`, `auth`, `tickets`, `orders` and `expiration`. Each project keeps its own include pattern, setup file and timeouts; packages have no Vitest config of their own. Every package still runs its own tests from its own folder with its own Vitest install, by pointing at that file (`vitest run --config ../vitest.config.mts --project <name>`). The root launcher runs only the `root` and `client` projects. The config imports Vitest types only, so a package run does not need the root dependencies installed.
+A single [vitest.config.mts](vitest.config.mts) at the root defines every suite as a named project: `root`, `client`, `common`, `common-broker`, `auth`, `tickets`, `orders` and `expiration`. Each project keeps its own include pattern, setup file and timeouts; packages have no Vitest config of their own. Every package still runs its own tests from its own folder with its own Vitest install, by pointing at that file (`vitest run --config ../../vitest.config.mts --project <name>`). The root launcher runs only the `root` and `client` projects. The config imports Vitest types only, so a package run does not need the root dependencies installed.
 
 `npm test` runs manifest/Compose checks, common HTTP/JetStream contracts, all four backend suites, shared/backend typechecks, an undefined-name lint of the client (ESLint), the frontend production build, and client routing/helper checks. None of these require Docker or Podman; the Compose dispatch check uses a stub engine. `npm run test:all` adds live acceptance against the running stack. The complete root command passed locally on Node 24 after moving all backend tests outside source: 100 tests passed with no skipped tests, plus typechecks and the client build. Acceptance used real MongoDB, Redis/Bull, and JetStream. A new GitHub Actions run has not been verified.
 
 Each backend keeps specs, setup and mock factories in `test/` beside `src/`. Root, common and client retain their existing external test folders. No backend test-only code remains in source.
 
-The [isolated broker suite](common/README.md#real-broker-verification) additionally passed 2 tests for replay, independent consumers, durable resume and redelivery, bringing executed automated checks to 102. CI has a separate real-broker job. Desktop/mobile browser checks also exercised signup, ticket creation, reservation, cancellation, release and order history; focus/label checks and overflow checks passed at the inspected viewports. These are focused checks, not a comprehensive external security/accessibility audit.
+The [isolated broker suite](backend/common/README.md#real-broker-verification) additionally passed 2 tests for replay, independent consumers, durable resume and redelivery, bringing executed automated checks to 102. CI has a separate real-broker job. Desktop/mobile browser checks also exercised signup, ticket creation, reservation, cancellation, release and order history; focus/label checks and overflow checks passed at the inspected viewports. These are focused checks, not a comprehensive external security/accessibility audit.
 
 `compose:acceptance` builds/starts the real application stack with a 15-second order lifetime so the automatic-expiration scenario finishes quickly. Normal startup keeps the 900-second default. The orders service validates `ORDER_EXPIRATION_SECONDS` as a positive integer. Recreate orders with the normal environment when returning to ordinary development, for example `docker compose up -d --force-recreate --no-deps orders` with no lifetime override exported.
 
@@ -204,7 +206,7 @@ npm run test:services
 npm run test:acceptance
 ```
 
-`test:services` runs common/backend checks and the frontend production build without requiring the Compose stack. Backend suites start temporary MongoDB instances; the first run may need to download a MongoDB binary. Run this build-oriented command outside a running local `npm run dev`, since both use the client's build directory. Each backend also exposes `typecheck`, `test` (one Vitest run of its project), `test:watch` (interactive Vitest watch of its project), and `test:ci` scripts through `npm --prefix <service> run <script>`. Root test launchers use WSL from Windows so they resolve the same Linux-installed tooling as install/update.
+`test:services` runs common/backend checks and the frontend production build without requiring the Compose stack. Backend suites start temporary MongoDB instances; the first run may need to download a MongoDB binary. Run this build-oriented command outside a running local `npm run dev`, since both use the client's build directory. Each backend also exposes `typecheck`, `test` (one Vitest run of its project), `test:watch` (interactive Vitest watch of its project), and `test:ci` scripts through `npm --prefix backend/<service> run <script>`. Root test launchers use WSL from Windows so they resolve the same Linux-installed tooling as install/update.
 
 Acceptance tests need a running application: either full Compose or local watch mode backed by infrastructure containers. They wait for frontend/API readiness, then check that page URLs (including a deep link) return the app shell while API paths reach the services, and exercise authentication cookies, validation errors, authorization, and event-driven ticket reservation/cancellation. The automatic-expiration test observes the returned `expiresAt`, checks that the order is not cancelled early, waits for Redis/Bull and NATS to cancel it and release its ticket, and verifies the ticket can be reserved again. It does not manually cancel the order whose automatic expiration is being checked.
 

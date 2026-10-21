@@ -8,4 +8,4 @@ All automated suites use Vitest. Install dependencies with the root installer, t
 
 Acceptance creates unique test accounts/tickets. Use only a development/test stack; `ACCEPTANCE_BASE_URL` can target another frontend. The short test lifetime is 15 seconds; ordinary development is 900 seconds. Restore orders without the override afterward.
 
-Service unit tests live under each package's `test/` folder, not `src/`. Client tests are under [client/test](../client/test). Shared unit contracts and the separate isolated broker suite are documented in [common/README.md](../common/README.md). Real broker tests are an explicit additional gate, not silently skipped cases in ordinary unit runs.
+Service unit tests live under each package's `test/` folder, not `src/`. Client tests are under [client/test](../client/test). Shared unit contracts and the separate isolated broker suite are documented in [backend/common/README.md](../backend/common/README.md). Real broker tests are an explicit additional gate, not silently skipped cases in ordinary unit runs.

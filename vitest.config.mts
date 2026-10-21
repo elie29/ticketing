@@ -10,7 +10,7 @@ const project = (name: string, directory: string, test: ProjectTest): TestProjec
 });
 
 const service = (name: string, setupFiles: string[]) =>
-  project(name, name, {
+  project(name, `backend/${name}`, {
     include: ['test/**/*.test.ts'],
     setupFiles,
     testTimeout: 60000,
@@ -32,12 +32,12 @@ export default {
     projects: [
       project('root', '.', rootSuite),
       project('client', 'client', rootSuite),
-      project('common', 'common', {
+      project('common', 'backend/common', {
         include: ['test/**/*.test.cjs'],
         exclude: ['test/broker/**'],
         testTimeout: 15000,
       }),
-      project('common-broker', 'common', {
+      project('common-broker', 'backend/common', {
         include: ['test/broker/**/*.test.cjs'],
         testTimeout: 20000,
         hookTimeout: 15000,

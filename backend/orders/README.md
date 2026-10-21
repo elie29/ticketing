@@ -17,17 +17,17 @@ Consumes `ticket:created`, `ticket:updated` and `expiration:complete`. Publishes
 
 ## Development
 
-From the repository root: `docker compose up --build -d` or `podman compose up --build -d`. For local source watchers, use the [root development workflow](../README.md#infrastructure-containers-and-local-watch).
+From the repository root: `docker compose up --build -d` or `podman compose up --build -d`. For local source watchers, use the [root development workflow](../../README.md#infrastructure-containers-and-local-watch).
 
 Local port: `3002`. Settings: `JWT_KEY`, `MONGO_URI`, `MONGO_USR`, `MONGO_PWD`, `NATS_CLIENT`, `NATS_URL`; optional `SERVER_PORT` and `ORDER_EXPIRATION_SECONDS`. The private [common](../common/README.md) dependency is linked locally. No `NATS_CLUSTER_ID` is needed.
 
 ## Tests
 
 ```bash
-npm --prefix orders run typecheck
-npm --prefix orders run test:ci
+npm --prefix backend/orders run typecheck
+npm --prefix backend/orders run test:ci
 ```
 
-Run these from the repository root after building common. Specs are in [test/routes](test/routes), [test/events/listeners](test/events/listeners) and [test/config.test.ts](test/config.test.ts). [test/setup.ts](test/setup.ts) starts temporary MongoDB and explicitly wires the mock transport. Watch: `npm --prefix orders run test:watch`.
+Run these from the repository root after building common. Specs are in [test/routes](test/routes), [test/events/listeners](test/events/listeners) and [test/config.test.ts](test/config.test.ts). [test/setup.ts](test/setup.ts) starts temporary MongoDB and explicitly wires the mock transport. Watch: `npm --prefix backend/orders run test:watch`.
 
 Live automatic-expiration coverage is in the root acceptance suite and uses real MongoDB, Bull/Redis and JetStream.

@@ -26,13 +26,13 @@ export TICKETS_API_URL="${TICKETS_API_URL:-http://127.0.0.1:3003}"
 export TSC_WATCHFILE=DynamicPriorityPolling
 export CHOKIDAR_USEPOLLING=true
 
-npm --prefix common run build
+npm --prefix backend/common run build
 
 exec "$ROOT_DIR/node_modules/.bin/concurrently" --kill-others \
 	--names common,auth,tickets,orders,expiration,client \
-	"npm --prefix common run dev" \
-	"env MONGO_URI=mongodb://127.0.0.1:27017/auth SERVER_PORT=3001 npm --prefix auth run dev" \
-	"env MONGO_URI=mongodb://127.0.0.1:27017/tickets SERVER_PORT=3003 NATS_CLIENT=tickets-dev npm --prefix tickets run dev" \
-	"env MONGO_URI=mongodb://127.0.0.1:27017/orders SERVER_PORT=3002 NATS_CLIENT=orders-dev npm --prefix orders run dev" \
-	"env NATS_CLIENT=expiration-dev npm --prefix expiration run dev" \
+	"npm --prefix backend/common run dev" \
+	"env MONGO_URI=mongodb://127.0.0.1:27017/auth SERVER_PORT=3001 npm --prefix backend/auth run dev" \
+	"env MONGO_URI=mongodb://127.0.0.1:27017/tickets SERVER_PORT=3003 NATS_CLIENT=tickets-dev npm --prefix backend/tickets run dev" \
+	"env MONGO_URI=mongodb://127.0.0.1:27017/orders SERVER_PORT=3002 NATS_CLIENT=orders-dev npm --prefix backend/orders run dev" \
+	"env NATS_CLIENT=expiration-dev npm --prefix backend/expiration run dev" \
 	"npm --prefix client run dev"

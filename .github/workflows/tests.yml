@@ -6,11 +6,7 @@ on:
     branches:
       - main
     paths:
-      - 'common/**'
-      - 'auth/**'
-      - 'orders/**'
-      - 'tickets/**'
-      - 'expiration/**'
+      - 'backend/**'
       - 'client/**'
       - 'test/**'
       - 'scripts/**'
@@ -23,11 +19,7 @@ on:
       - '.github/workflows/tests.yml'
   pull_request:
     paths:
-      - 'common/**'
-      - 'auth/**'
-      - 'orders/**'
-      - 'tickets/**'
-      - 'expiration/**'
+      - 'backend/**'
       - 'client/**'
       - 'test/**'
       - 'scripts/**'
@@ -53,16 +45,16 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: |
-            common/package-lock.json
-            ${{ matrix.service }}/package-lock.json
+            backend/common/package-lock.json
+            backend/${{ matrix.service }}/package-lock.json
       - name: Install and build local common
-        run: npm --prefix common ci && npm --prefix common run test:ci
+        run: npm --prefix backend/common ci && npm --prefix backend/common run test:ci
       - name: Install root test tooling
         run: npm ci --ignore-scripts
       - name: Check manifest alignment
         run: npm run test:manifests
       - name: Install and test service
-        run: npm --prefix ${{ matrix.service }} ci && npm --prefix ${{ matrix.service }} run typecheck && npm --prefix ${{ matrix.service }} run test:ci
+        run: npm --prefix backend/${{ matrix.service }} ci && npm --prefix backend/${{ matrix.service }} run typecheck && npm --prefix backend/${{ matrix.service }} run test:ci
 
   client:
     runs-on: ubuntu-latest
@@ -87,7 +79,7 @@ jobs:
         with:
           node-version: '24'
       - run: docker run -d --name jetstream-test -p 127.0.0.1:14222:4222 nats:2.12-alpine --jetstream --store_dir /data
-      - run: npm --prefix common ci && npm --prefix common run test:broker
+      - run: npm --prefix backend/common ci && npm --prefix backend/common run test:broker
       - if: failure()
         run: docker logs jetstream-test
       - if: always()

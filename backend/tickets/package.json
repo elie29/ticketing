@@ -9,9 +9,9 @@
     "start": "tsx src/index.ts",
     "dev": "tsx watch --include \"../common/build/**/*.js\" src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --config ../vitest.config.mts --project tickets",
-    "test:watch": "vitest --config ../vitest.config.mts --project tickets",
-    "test:ci": "vitest run --config ../vitest.config.mts --project tickets"
+    "test": "vitest run --config ../../vitest.config.mts --project tickets",
+    "test:watch": "vitest --config ../../vitest.config.mts --project tickets",
+    "test:ci": "vitest run --config ../../vitest.config.mts --project tickets"
   },
   "keywords": [],
   "author": "",

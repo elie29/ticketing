@@ -17,7 +17,7 @@ JetStream provides at-least-once delivery, not an exactly-once transaction spann
 
 ## Development
 
-Start from the repository root with `docker compose up --build -d` or `podman compose up --build -d`; alternatively use the [infrastructure plus watch workflow](../README.md#infrastructure-containers-and-local-watch).
+Start from the repository root with `docker compose up --build -d` or `podman compose up --build -d`; alternatively use the [infrastructure plus watch workflow](../../README.md#infrastructure-containers-and-local-watch).
 
 Local port: `3003`. Required settings: `JWT_KEY`, `MONGO_URI`, `NATS_CLIENT`, `NATS_URL`. Mongo authentication uses `MONGO_USR`/`MONGO_PWD`; `SERVER_PORT` is optional. Compose supplies internal DNS names and the root watch launcher supplies localhost defaults. `NATS_CLUSTER_ID` is not used.
 
@@ -26,10 +26,10 @@ Local port: `3003`. Required settings: `JWT_KEY`, `MONGO_URI`, `NATS_CLIENT`, `N
 Run from the repository root after building common:
 
 ```bash
-npm --prefix tickets run typecheck
-npm --prefix tickets run test:ci
+npm --prefix backend/tickets run typecheck
+npm --prefix backend/tickets run test:ci
 ```
 
-[test/routes](test/routes), [test/models](test/models) and [test/events/listeners](test/events/listeners) retain HTTP, concurrency and event-handler assertions. [test/setup.ts](test/setup.ts) uses temporary MongoDB and explicitly installs the [NATS mock](test/mocks/nats-wrapper.ts). Tests and mocks are outside production source. Watch: `npm --prefix tickets run test:watch`.
+[test/routes](test/routes), [test/models](test/models) and [test/events/listeners](test/events/listeners) retain HTTP, concurrency and event-handler assertions. [test/setup.ts](test/setup.ts) uses temporary MongoDB and explicitly installs the [NATS mock](test/mocks/nats-wrapper.ts). Tests and mocks are outside production source. Watch: `npm --prefix backend/tickets run test:watch`.
 
-The container runs in the production Compose stack behind nginx (`/api/tickets*`). See [root documentation](../README.md) for setup and STAN-to-JetStream cutover caveats.
+The container runs in the production Compose stack behind nginx (`/api/tickets*`). See [root documentation](../../README.md) for setup and STAN-to-JetStream cutover caveats.

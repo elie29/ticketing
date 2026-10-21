@@ -10,7 +10,7 @@ Order expiry comes from the event's `expiresAt`; configure the lifetime on the o
 
 ## Development
 
-From the repository root, start `docker compose up --build -d` or `podman compose up --build -d`. The [local-watch workflow](../README.md#infrastructure-containers-and-local-watch) runs infrastructure in containers and watches source locally.
+From the repository root, start `docker compose up --build -d` or `podman compose up --build -d`. The [local-watch workflow](../../README.md#infrastructure-containers-and-local-watch) runs infrastructure in containers and watches source locally.
 
 Required settings: `NATS_CLIENT`, `NATS_URL`, `REDIS_HOST`, `REDIS_PORT`. Compose uses internal DNS; the root watch launcher uses localhost. `NATS_CLUSTER_ID` is not used. Shared events/transport are provided by the local [common package](../common/README.md).
 
@@ -19,10 +19,10 @@ Required settings: `NATS_CLIENT`, `NATS_URL`, `REDIS_HOST`, `REDIS_PORT`. Compos
 From the repository root after building common:
 
 ```bash
-npm --prefix expiration run typecheck
-npm --prefix expiration run test:ci
+npm --prefix backend/expiration run typecheck
+npm --prefix backend/expiration run test:ci
 ```
 
-[test/queues/expiration-queue.test.ts](test/queues/expiration-queue.test.ts) checks scheduling/acknowledgement ordering, failed scheduling, awaited publication and failed publication. Its Bull and [NATS mock](test/mocks/nats-wrapper.ts) are isolated from live infrastructure. Watch: `npm --prefix expiration run test:watch`.
+[test/queues/expiration-queue.test.ts](test/queues/expiration-queue.test.ts) checks scheduling/acknowledgement ordering, failed scheduling, awaited publication and failed publication. Its Bull and [NATS mock](test/mocks/nats-wrapper.ts) are isolated from live infrastructure. Watch: `npm --prefix backend/expiration run test:watch`.
 
 The root live acceptance suite additionally proves automatic expiration and ticket re-reservation through the real worker.

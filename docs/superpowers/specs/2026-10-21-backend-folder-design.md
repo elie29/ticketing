@@ -52,11 +52,19 @@ docker-compose.yaml  docker-compose.dev.yaml  vitest.config.mts  package.json  p
 - The common broker suite passes against a disposable NATS (2 tests).
 - `podman compose -f docker-compose.yaml -f docker-compose.dev.yaml config` renders, and the four backend images build from the new Dockerfile path.
 - No remaining references to the old top-level package paths outside `docs/superpowers/` history (grep).
+- GitHub Actions can only run after the owner pushes; that result is recorded as owner-reported.
 
 ## Left to the builder
 
 - Order of edits and how to batch commits.
 - Whether local `node_modules` must be reinstalled after the move. The `../common` symlinks are relative and should survive; reinstall if anything fails to resolve.
+
+## Assistant's calls
+
+- `common` moves into `backend/` with the services (proposed by the assistant, agreed by the user).
+- Historical plans and specs in `docs/superpowers/` keep the old paths; this spec records the move.
+- Per-package `.dockerignore` files move with their packages unchanged (the build context is the root, so only the root `.dockerignore` is in effect).
+- Unrelated working-tree edits (for example `.gitattributes`) stay out of this change's commits.
 
 ## Constraints
 

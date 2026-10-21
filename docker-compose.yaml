@@ -35,7 +35,7 @@ services:
   auth:
     build:
       context: .
-      dockerfile: common/Dockerfile
+      dockerfile: backend/common/Dockerfile
       target: service
       args:
         SERVICE: auth
@@ -55,7 +55,7 @@ services:
   tickets:
     build:
       context: .
-      dockerfile: common/Dockerfile
+      dockerfile: backend/common/Dockerfile
       target: service
       args:
         SERVICE: tickets
@@ -79,7 +79,7 @@ services:
   orders:
     build:
       context: .
-      dockerfile: common/Dockerfile
+      dockerfile: backend/common/Dockerfile
       target: service
       args:
         SERVICE: orders
@@ -104,7 +104,7 @@ services:
   expiration:
     build:
       context: .
-      dockerfile: common/Dockerfile
+      dockerfile: backend/common/Dockerfile
       target: service
       args:
         SERVICE: expiration
