@@ -39,9 +39,9 @@ test('backends expose consistent commands and consume common locally', () => {
       start: 'tsx src/index.ts',
       dev: 'tsx watch --include "../common/build/**/*.js" src/index.ts',
       typecheck: 'tsc --noEmit',
-      test: 'vitest run',
-      'test:watch': 'vitest',
-      'test:ci': 'vitest run',
+      test: `vitest run --config ../vitest.config.mts --project ${directory}`,
+      'test:watch': `vitest --config ../vitest.config.mts --project ${directory}`,
+      'test:ci': `vitest run --config ../vitest.config.mts --project ${directory}`,
     })) {
       assert.equal(manifest.scripts[name], command, `${directory}: ${name}`);
     }

@@ -9,9 +9,9 @@
     "start": "tsx src/index.ts",
     "dev": "tsx watch --include \"../common/build/**/*.js\" src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ci": "vitest run"
+    "test": "vitest run --config ../vitest.config.mts --project expiration",
+    "test:watch": "vitest --config ../vitest.config.mts --project expiration",
+    "test:ci": "vitest run --config ../vitest.config.mts --project expiration"
   },
   "keywords": [],
   "author": "",

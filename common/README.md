@@ -27,7 +27,7 @@ The build generates JavaScript and declarations in `build/`; do not edit generat
 
 ## Real Broker Verification
 
-The separate [broker suite](test/broker/jetstream.test.cjs) requires a dedicated disposable JetStream broker, never the running application's broker. Normal unit tests do not require NATS and do not discover this integration suite. From WSL/Linux at the repository root:
+The separate [broker suite](test/broker/jetstream.test.cjs) requires a dedicated disposable JetStream broker, never the running application's broker. Normal unit tests (the `common` project of the root [vitest.config.mts](../vitest.config.mts)) do not require NATS and do not discover this integration suite, which is the separate `common-broker` project. From WSL/Linux at the repository root:
 
 ```bash
 podman run --rm -d --name ticketing-broker-verification -p 127.0.0.1:14222:4222 docker.io/library/nats:2.12-alpine --jetstream --store_dir /data
