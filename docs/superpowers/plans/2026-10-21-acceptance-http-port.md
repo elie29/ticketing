@@ -8,7 +8,7 @@
 
 ## Tasks
 
-- [x] Task 1 — `vitest` launcher fills `HTTP_PORT` from the root `.env` — 2026-10-21 · uncommitted
+- [x] Task 1 — `vitest` launcher fills `HTTP_PORT` from the root `.env` — 2026-10-21 · 762a85d
 - [x] Task 2 — Acceptance target resolution, docs and final gate — 2026-10-21
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -117,3 +117,4 @@ Run: `npm run test:manifests` Expected: all pass (the count before Task 1 + 4 ne
 - 2026-10-21 — Native (inline) execution chosen by the owner; work stays uncommitted on `main` (no worktree), since only the owner commits.
 - 2026-10-21 — Task 1 gate: `npm run test:manifests` 34/34 (5 new/updated tests seen failing first). Task 2 gate: `npm test` green; `npm run test:acceptance` 6/6 on the 8080 stack with no `ACCEPTANCE_BASE_URL`; Prettier clean.
 - 2026-10-21 — Final review (fresh reviewer): no Critical/Important. Deferred minors, left to the owner: (1) the shared `.env` parser keeps quotes and inline comments (`HTTP_PORT="8080"` would break the URL; `dev` has the same gap, out of scope); (2) the launcher test computes its expected `env` with `vitestEnvironment` itself; (3) `test/README.md` "; The suite" capital T; (4) no test pins an empty shell `HTTP_PORT`.
+- 2026-10-21 — Follow-up after 762a85d, owner asked to fix deferred minors 2 and 3 (uncommitted): the launcher test now clears the inherited `HTTP_PORT` and asserts `env.HTTP_PORT === '8080'` directly (a mutation dropping the assignment makes it fail); `test/README.md` typo fixed. Minor 4 fixed too: test `vitestEnvironment keeps an empty shell HTTP_PORT, as Compose does` (fails under the `if (base.HTTP_PORT)` mutation); `test:manifests` 35/35. Minor 1 stays deferred.

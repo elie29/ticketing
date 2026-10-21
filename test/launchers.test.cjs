@@ -119,14 +119,23 @@ describe('package actions', () => {
   test('vitest runs the root and client projects with node from the root, with the .env HTTP_PORT', () => {
     const read = [];
     const readFile = file => { read.push(file); return 'HTTP_PORT=8080'; };
-    const { result, run } = act('vitest', { exists: () => true, readFile });
-    assert.equal(result, 0);
-    assert.deepEqual(read, [path.join(R, '.env')]);
-    assert.deepEqual(run, [[
-      process.execPath,
-      [path.join(R, 'node_modules/vitest/vitest.mjs'), 'run', '--project', 'root', '--project', 'client', '--x'],
-      { cwd: R, env: vitestEnvironment(process.env, 'HTTP_PORT=8080') },
-    ]]);
+    // The launcher running this suite may itself have set HTTP_PORT; clear it so the .env value is what reaches run.
+    const shellPort = process.env.HTTP_PORT;
+    delete process.env.HTTP_PORT;
+    try {
+      const { result, run } = act('vitest', { exists: () => true, readFile });
+      assert.equal(result, 0);
+      assert.deepEqual(read, [path.join(R, '.env')]);
+      assert.equal(run.length, 1);
+      const [command, args, { cwd, env }] = run[0];
+      assert.equal(command, process.execPath);
+      assert.deepEqual(args, [path.join(R, 'node_modules/vitest/vitest.mjs'), 'run', '--project', 'root', '--project', 'client', '--x']);
+      assert.equal(cwd, R);
+      assert.equal(env.HTTP_PORT, '8080');
+      assert.equal(env.PATH ?? env.Path, process.env.PATH);
+    } finally {
+      if (shellPort !== undefined) process.env.HTTP_PORT = shellPort;
+    }
   });
 
   const { vitestEnvironment } = require('../scripts/actions/vitest.cjs');
@@ -138,6 +147,10 @@ describe('package actions', () => {
 
   test('vitestEnvironment keeps the shell HTTP_PORT', () => {
     assert.deepEqual(vitestEnvironment({ HTTP_PORT: '81' }, 'HTTP_PORT=8080'), { HTTP_PORT: '81' });
+  });
+
+  test('vitestEnvironment keeps an empty shell HTTP_PORT, as Compose does', () => {
+    assert.deepEqual(vitestEnvironment({ HTTP_PORT: '' }, 'HTTP_PORT=8080'), { HTTP_PORT: '' });
   });
 
   test('vitestEnvironment ignores an empty HTTP_PORT', () => {
