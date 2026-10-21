@@ -1,0 +1,4 @@
+{
+  "description": "ticketing dev NATS JetStream",
+  "url": "nats://nats:4222"
+}

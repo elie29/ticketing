@@ -15,7 +15,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@elie29/ticketing-common": "file:../common",
     "bull": "^4.16.5",

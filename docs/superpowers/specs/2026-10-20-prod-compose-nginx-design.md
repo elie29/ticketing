@@ -43,7 +43,7 @@ Give the project a production launch path with a single command, `docker compose
 Files:
 
 - `docker-compose.yaml` — production stack: nginx, client, auth, tickets, orders, expiration, mongo, redis, nats. Only nginx has `ports`.
-- `docker-compose.dev.yaml` — overlay adding host ports for mongo (27017), redis (6379), nats (4222, 8222), all as `127.0.0.1:<port>:<port>`, and Redis Insight (`redis/redisinsight:2.70`) on `127.0.0.1:15540:5540` with a preconfigured connection to `redis:6379` through `RI_REDIS_HOST` / `RI_REDIS_PORT` / `RI_REDIS_ALIAS`. Redis Insight's free edition has no login; it relies on the loopback binding. Loaded only by `compose:infra` and `compose:down`.
+- `docker-compose.dev.yaml` — overlay adding host ports for mongo (27017), redis (6379), nats (4222, 8222), all as `127.0.0.1:<port>:<port>`, and Redis Insight (`redis/redisinsight:2.70`) on `127.0.0.1:15540:5540` with a preconfigured connection to `redis:6379` through `RI_REDIS_HOST` / `RI_REDIS_PORT` / `RI_REDIS_ALIAS`. Redis Insight's free edition has no login; it relies on the loopback binding. NUI (`ghcr.io/nats-nui/nui:0.9.3`) on `127.0.0.1:31311:31311` imports the `ticketing` NATS connection from the read-only `deploy/nui` CLI context at startup (added 2026-10-21); it also has no login. Loaded only by `compose:infra` and `compose:down`.
 - `deploy/nginx/default.conf` — the four `location` blocks, forwarding `Host`, `X-Forwarded-For`, `X-Forwarded-Proto`.
 - `client/Dockerfile` — multi-stage: deps, build, run (`USER node`, `npm start`).
 - `common/Dockerfile` — `service` stage gains `ENV NODE_ENV=production` and `USER node`.

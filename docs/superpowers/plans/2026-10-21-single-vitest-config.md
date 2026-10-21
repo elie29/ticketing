@@ -1,16 +1,16 @@
 # Single Vitest Config Implementation Plan
 
-> **Status:** in progress
+> **Status:** done
 >
-> **Resume at:** Task 3 — read the rerun of `npm test` (scratchpad npm-test-2.log); first run failed in auth signup because the concurrent broker run rebuilt `common/build` mid-test
+> **Resume at:** — (nothing; every task is checked)
 >
-> **Last updated:** 2026-10-21 · uncommitted
+> **Last updated:** 2026-10-21
 
 ## Tasks
 
-- [x] Task 1 — Root projects config replaces the six package configs — 2026-10-21 · uncommitted
-- [x] Task 2 — Package scripts, root runner and manifest contract — 2026-10-21 · uncommitted
-- [ ] Task 3 — READMEs and full regression gate
+- [x] Task 1 — Root projects config replaces the six package configs — 2026-10-21 · 3857804
+- [x] Task 2 — Package scripts, root runner and manifest contract — 2026-10-21 · 3857804
+- [x] Task 3 — READMEs and full regression gate — 2026-10-21
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -47,8 +47,8 @@
 - Modify: `vitest.config.mts`
 - Delete: `auth/vitest.config.mts`, `tickets/vitest.config.mts`, `orders/vitest.config.mts`, `expiration/vitest.config.mts`, `common/vitest.config.mts`, `common/vitest.broker.config.mts`
 
-- [x] 2026-10-21 · uncommitted — Step 1: Write the projects config (shared `test` defaults at top level, projects extend them).
-- [x] 2026-10-21 · uncommitted — Step 2: From `auth/`, `vitest run --config ../vitest.config.mts --project auth` passed 4 files / 12 tests; project root resolved to `auth`.
+- [x] 2026-10-21 · 3857804 — Step 1: Write the projects config (shared `test` defaults at top level, projects extend them).
+- [x] 2026-10-21 · 3857804 — Step 2: From `auth/`, `vitest run --config ../vitest.config.mts --project auth` passed 4 files / 12 tests; project root resolved to `auth`.
 
 ### Task 2: Scripts and manifest contract
 
@@ -58,8 +58,8 @@
 - Modify: `common/package.json` scripts `test`, `test:watch`, `test:broker`
 - Modify: `scripts/vitest.sh`, `test/package-manifests.test.cjs`
 
-- [x] 2026-10-21 · uncommitted — Step 1 (failed as expected, 1 of 7): Update `test/package-manifests.test.cjs` expectations to `vitest run --config ../vitest.config.mts --project <dir>` / `vitest --config ../vitest.config.mts --project <dir>`; run `npm run test:manifests` — expect FAIL.
-- [x] 2026-10-21 · uncommitted — Step 2: Scripts updated; `test:manifests` passes. `test:routing` passes (4 files) after `npm --prefix client ci` restored the missing local `react-router` install.
+- [x] 2026-10-21 · 3857804 — Step 1 (failed as expected, 1 of 7): Update `test/package-manifests.test.cjs` expectations to `vitest run --config ../vitest.config.mts --project <dir>` / `vitest --config ../vitest.config.mts --project <dir>`; run `npm run test:manifests` — expect FAIL.
+- [x] 2026-10-21 · 3857804 — Step 2: Scripts updated; `test:manifests` passes. `test:routing` passes (4 files) after `npm --prefix client ci` restored the missing local `react-router` install.
 
 ### Task 3: Docs and gate
 
@@ -67,8 +67,8 @@
 
 - Modify: `README.md`, `scripts/README.md`, `test/README.md`, package READMEs where they describe configs
 
-- [x] 2026-10-21 · uncommitted — Step 1: Updated `README.md`, `scripts/README.md`, `common/README.md`; CI workflow needed no change.
-- [ ] Step 2 (broker: 2 passed with podman NATS, 2026-10-21; prettier clean): Run `npm test` (manifests, services incl. typechecks, routing) and the broker/acceptance suites where infrastructure allows — expect same counts as before.
+- [x] 2026-10-21 · 3857804 — Step 1: Updated `README.md`, `scripts/README.md`, `common/README.md`; CI workflow needed no change.
+- [x] 2026-10-21 — Step 2: GitHub Actions passed on 3857804 (user-reported). Locally: manifests 7, common 9, broker 2 (podman NATS), auth 12, tickets 23, orders 26, expiration 4, client lint + build, client/root routing 23 — 104 tests in `npm test`, exit 0, all typechecks green; prettier clean. A first local run failed in auth signup only because a concurrent `test:broker` rebuilt `common/build` mid-test; the isolated rerun passed. Live acceptance was not run locally.
 
 ## Decisions
 

@@ -55,7 +55,7 @@ test('actions target the prod stack, or the dev overlay for infra and teardown',
     assert.deepEqual(calls('acceptance'), [['up', '--build', '-d'], ['up', '-d', '--force-recreate', '--no-deps', 'orders']]);
     assert.deepEqual(calls('infra'), [
       [...dev, 'stop', 'nginx', 'auth', 'tickets', 'orders', 'expiration'],
-      [...dev, 'up', '-d', 'mongo', 'redis', 'nats', 'redisinsight'],
+      [...dev, 'up', '-d', 'mongo', 'redis', 'nats', 'redisinsight', 'nui'],
     ]);
     assert.deepEqual(calls('down'), [[...dev, 'down']]);
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }

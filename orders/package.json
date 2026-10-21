@@ -15,7 +15,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@elie29/ticketing-common": "file:../common",
     "@types/cookie-session": "^2.0.49",

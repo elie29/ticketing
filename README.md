@@ -113,7 +113,7 @@ npm run compose:infra
 npm run dev
 ```
 
-`compose:infra` stops this project's application containers and nginx, then starts MongoDB, Redis, NATS JetStream and Redis Insight with the dev overlay, which publishes every port on `127.0.0.1` only (27017, 6379, 4222, 8222 and 15540). NATS is required by tickets, orders and expiration, so MongoDB and Redis alone cannot support the complete application. The direct equivalent is `docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d mongo redis nats redisinsight`.
+`compose:infra` stops this project's application containers and nginx, then starts MongoDB, Redis, NATS JetStream, Redis Insight and NUI with the dev overlay, which publishes every port on `127.0.0.1` only (27017, 6379, 4222, 8222, 15540 and 31311). NATS is required by tickets, orders and expiration, so MongoDB and Redis alone cannot support the complete application. The direct equivalent is `docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d mongo redis nats redisinsight nui`.
 
 `npm run dev` loads the root `.env` (variables already exported in the shell win), builds common once, then runs its TypeScript watcher, the four backend watchers and the Vite development server together. Backend source changes restart the affected service; compiled common changes are also included in backend watch paths. The client uses Vite hot reload, and the Vite dev server proxies `/api` to the localhost backends. It listens on `localhost` only, so use <http://localhost:3000>.
 
@@ -123,6 +123,7 @@ Data browsers in infra mode:
 
 - MongoDB: use [MongoDB Compass](https://www.mongodb.com/products/tools/compass) on the host with `mongodb://root:<MONGO_ROOT_PASSWORD>@127.0.0.1:27017/?authSource=admin`.
 - Redis Insight, started by `compose:infra`: <http://127.0.0.1:15540>. Accept its EULA on first visit; the preconfigured `ticketing` connection to `redis:6379` then appears. Its free edition has no login, so it relies on the loopback binding, and its settings reset when the container is recreated.
+- NATS JetStream, through [NUI](https://natsnui.app) started by `compose:infra`: <http://127.0.0.1:31311>. The `ticketing` connection to `nats://nats:4222` is imported at startup from [deploy/nui/ticketing.json](deploy/nui/ticketing.json); open it to browse the `TICKETING` stream and its messages, inspect consumers or subscribe to subjects. NUI has no login, so it relies on the loopback binding, and its settings reset when the container is recreated.
 
 All client requests run in the browser on the frontend origin. In development, `AUTH_API_URL`, `ORDERS_API_URL` and `TICKETS_API_URL` set the Vite proxy targets; the local dev launcher supplies localhost defaults. Production needs none of them: nginx routes `/api`. The dev launcher also supplies development JWT, MongoDB, NATS and Redis defaults when neither the shell nor `.env` sets them.
 
@@ -218,7 +219,7 @@ Production stack: only nginx is published, on `HTTP_PORT` (default 80). Inside t
 - orders: 3002
 - tickets: 3003
 
-Infra mode publishes MongoDB 27017, Redis 6379, NATS 4222/8222 and Redis Insight 15540, all on `127.0.0.1`.
+Infra mode publishes MongoDB 27017, Redis 6379, NATS 4222/8222, Redis Insight 15540 and NUI 31311, all on `127.0.0.1`.
 
 ## Github actions
 

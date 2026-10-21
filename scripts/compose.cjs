@@ -40,11 +40,11 @@ function runCompose(options, root) {
     if (result.error) console.error(`${engine.label}: ${result.error.message}. Check the selected engine and Compose provider.`);
     return result.status ?? (result.signal === 'SIGINT' ? 130 : 1);
   }
-  // The dev overlay publishes the infra ports on 127.0.0.1 and defines the Redis Insight UI.
+  // The dev overlay publishes the infra ports on 127.0.0.1 and defines the Redis Insight and NUI (NATS) UIs.
   const dev = ['-f', 'docker-compose.yaml', '-f', 'docker-compose.dev.yaml'];
   if (action === 'infra') {
     const status = execute([...dev, 'stop', 'nginx', 'auth', 'tickets', 'orders', 'expiration']);
-    return status || execute([...dev, 'up', '-d', ...args, 'mongo', 'redis', 'nats', 'redisinsight']);
+    return status || execute([...dev, 'up', '-d', ...args, 'mongo', 'redis', 'nats', 'redisinsight', 'nui']);
   }
   if (action === 'acceptance') {
     const status = execute(['up', '--build', '-d', ...args]);

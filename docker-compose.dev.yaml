@@ -1,5 +1,5 @@
-# Overlay for `npm run dev`: exposes the infra on 127.0.0.1 and adds the Redis Insight UI.
-# Usage: docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d mongo redis nats redisinsight
+# Overlay for `npm run dev`: exposes the infra on 127.0.0.1 and adds the Redis Insight and NUI (NATS) UIs.
+# Usage: docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up -d mongo redis nats redisinsight nui
 
 services:
   mongo:
@@ -27,6 +27,22 @@ services:
       RI_REDIS_ALIAS: ticketing
     depends_on:
       redis:
+        condition: service_healthy
+    networks:
+      - ticketing-network
+
+  # NATS web UI. No login; reachable from this machine only. The `ticketing` connection
+  # is imported from deploy/nui at startup; settings reset when the container is recreated.
+  nui:
+    image: ghcr.io/nats-nui/nui:0.9.3
+    restart: always
+    command: ["--nats-cli-contexts", "/nats-cli-contexts"]
+    ports:
+      - "127.0.0.1:31311:31311"
+    volumes:
+      - ./deploy/nui:/nats-cli-contexts:ro
+    depends_on:
+      nats:
         condition: service_healthy
     networks:
       - ticketing-network
