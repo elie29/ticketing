@@ -1,16 +1,16 @@
 # Backend Folder Implementation Plan
 
-> **Status:** in progress
+> **Status:** done
 >
-> **Resume at:** Task 3 — run `CI=1 npm test` alone, then broker suite, then Compose config and image build
+> **Resume at:** — (nothing; every task is checked)
 >
-> **Last updated:** 2026-10-21 · uncommitted
+> **Last updated:** 2026-10-21
 
 ## Tasks
 
-- [x] Task 1 — Move the five backend packages into `backend/` and repoint every outside reference — 2026-10-21 · uncommitted
-- [x] Task 2 — Docs follow the move — 2026-10-21 · uncommitted
-- [ ] Task 3 — Full regression gate
+- [x] Task 1 — Move the five backend packages into `backend/` and repoint every outside reference — 2026-10-21 · f14a7c5
+- [x] Task 2 — Docs follow the move — 2026-10-21
+- [x] Task 3 — Full regression gate — 2026-10-21
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -46,27 +46,28 @@
 - Move: `auth`, `tickets`, `orders`, `expiration`, `common` → `backend/`
 - Modify: `test/package-manifests.test.cjs`, `vitest.config.mts`, `backend/*/package.json` (test scripts), `backend/common/Dockerfile`, `docker-compose.yaml`, `scripts/install.sh`, `scripts/update.sh`, `scripts/test.sh`, `scripts/dev.sh`, `.github/workflows/tests.yml`
 
-- [x] 2026-10-21 · uncommitted — Step 1: In `test/package-manifests.test.cjs`, directories become `backend/common`, `backend/auth`, … and expected scripts `vitest run --config ../../vitest.config.mts --project <name>`; `npm run test:manifests` — failed as expected (ENOENT `backend/common/package.json`).
-- [x] 2026-10-21 · uncommitted — Step 2: `git mv` the five packages (installed `node_modules` moved with them); every listed file updated; `npm run test:manifests` passes.
+- [x] 2026-10-21 · f14a7c5 — Step 1: In `test/package-manifests.test.cjs`, directories become `backend/common`, `backend/auth`, … and expected scripts `vitest run --config ../../vitest.config.mts --project <name>`; `npm run test:manifests` — failed as expected (ENOENT `backend/common/package.json`).
+- [x] 2026-10-21 · f14a7c5 — Step 2: `git mv` the five packages (installed `node_modules` moved with them); every listed file updated; `npm run test:manifests` passes.
 
 ### Task 2: Docs
 
 **Files:** `README.md`, `scripts/README.md`, `test/README.md`, `client/README.md`, `backend/*/README.md`
 
-- [x] 2026-10-21 · uncommitted — Step 1: Root, test and five package READMEs updated (paths, `--prefix backend/<name>`, root links gain `../`; added a layout sentence under Package Documentation); prettier clean. Pre-existing: `scripts/README.md` links `.vscode/tasks.json`, which is not in the repo — left as is.
+- [x] 2026-10-21 — Step 1: Root, test and five package READMEs updated (paths, `--prefix backend/<name>`, root links gain `../`; README introduction with repository layout added at the user's request); prettier clean. Pre-existing broken `.vscode/tasks.json` link in `scripts/README.md` and the root README's "VS Code Tasks" section removed at the user's request (`.vscode` is gitignored and absent); NUI added to that README's infra list.
 
 ### Task 3: Gate
 
-- [ ] Step 1: `CI=1 npm test` — manifests 7, common 9, auth 12, tickets 23, orders 26, expiration 4, routing 23, client lint/build.
-- [ ] Step 2: Broker suite with disposable NATS — 2 passed.
-- [ ] Step 3: `podman compose ... config` renders; backend images build from `backend/common/Dockerfile`.
-- [ ] Step 4: Leftover-path grep is empty.
+- [x] 2026-10-21 — Step 1: `CI=1 npm test` exit 0 — manifests 7, common 9, auth 12, tickets 23, orders 26, expiration 4, routing 23, client lint/build (104 tests, none skipped).
+- [x] 2026-10-21 — Step 2: Broker suite from `backend/common` with disposable podman NATS — 2 passed.
+- [x] 2026-10-21 — Step 3: Merged Compose config renders `dockerfile: backend/common/Dockerfile` for the four backends; `podman compose build auth tickets orders expiration` exit 0, all four images tagged.
+- [x] 2026-10-21 — Step 4: Leftover-path grep is empty. GitHub Actions on f14a7c5 not yet reported (owner pushes).
 
 ## Decisions
 
 - 2026-10-21 — Five backend packages move into `backend/`; `client/`, `deploy/`, `scripts/`, `test/`, `docs/` stay. Reason: user agreed to the assistant's proposal.
 - 2026-10-21 — `common` moves with the services. Reason: assistant's proposal, user agreed; keeps all in-package relative paths valid.
 - 2026-10-21 — Execute inline in this session. Reason: user said go.
+- 2026-10-21 — Root README gains a short introduction (purpose, features, repository layout). Reason: user request during the move; content taken from the client screens, order lifetime default and architecture already documented.
 
 ## Blockers
 

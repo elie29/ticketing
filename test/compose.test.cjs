@@ -35,7 +35,7 @@ test('native override forwards arguments, cwd and nonzero exit status', () => {
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
 
-test('actions target the prod stack, or the dev overlay for infra and teardown', () => {
+test('actions use the dev overlay, except acceptance on the plain prod stack', () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'ticketing compose actions '));
   const log = path.join(directory, 'calls.jsonl');
   const file = path.join(directory, 'stub.cjs');
@@ -51,7 +51,7 @@ test('actions target the prod stack, or the dev overlay for infra and teardown',
   };
   const dev = ['-f', 'docker-compose.yaml', '-f', 'docker-compose.dev.yaml'];
   try {
-    assert.deepEqual(calls('up'), [['up', '--build', '-d']]);
+    assert.deepEqual(calls('up'), [[...dev, 'up', '--build', '-d']]);
     assert.deepEqual(calls('acceptance'), [['up', '--build', '-d'], ['up', '-d', '--force-recreate', '--no-deps', 'orders']]);
     assert.deepEqual(calls('infra'), [
       [...dev, 'stop', 'nginx', 'auth', 'tickets', 'orders', 'expiration'],

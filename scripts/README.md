@@ -9,4 +9,4 @@ Run commands from the repository root. [Root documentation](../README.md) contai
 - `test.sh` runs common/backend typechecks and Vitest suites, then builds the client with Vite.
 - `vitest.sh` runs root acceptance, client and manifest/dispatcher checks through the `root` and `client` projects of the root [vitest.config.mts](../vitest.config.mts).
 
-Use `npm run compose:infra` before `npm run dev`; it applies the `docker-compose.dev.yaml` overlay so MongoDB, Redis, NATS and Redis Insight listen on `127.0.0.1`. `npm run compose:up` starts the production stack behind nginx on port 80, and `npm run compose:down` stops both modes, including Redis Insight. [VS Code tasks](../.vscode/tasks.json) are optional wrappers around these commands.
+Use `npm run compose:infra` before `npm run dev`; it applies the `docker-compose.dev.yaml` overlay so MongoDB, Redis, NATS, Redis Insight and NUI listen on `127.0.0.1`. `npm run compose:up` starts the full stack behind nginx on port 80 with the same overlay (infra ports, Redis Insight and NUI), `npm run compose:acceptance` starts the plain production stack, and `npm run compose:down` stops both modes, including Redis Insight and NUI.

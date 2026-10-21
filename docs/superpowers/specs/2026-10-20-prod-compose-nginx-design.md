@@ -14,6 +14,7 @@ Give the project a production launch path with a single command, `docker compose
 - No database, broker or service port is published by the production file.
 - Production secrets (`JWT_KEY`, `MONGO_ROOT_PASSWORD`) are required and supplied through a `.env` file; a committed `.env.example` lists them with empty values, so `${VAR:?}` still fails right after `cp .env.example .env` until real values are generated (e.g. `openssl rand -base64 48`).
 - `npm run compose:infra` starts Mongo, Redis and NATS for `npm run dev`, plus the Redis Insight UI, all with host ports bound to `127.0.0.1` (amended 2026-10-20: the admin UIs were opt-in under a `tools` profile; mongo-express was later removed in favour of MongoDB Compass on the host).
+- `npm run compose:up` (amended 2026-10-21) applies the dev overlay as well: the full stack plus infra ports on `127.0.0.1`, Redis Insight and NUI. `compose:acceptance` and the CI acceptance job keep the production file alone.
 - The acceptance suite and the CI acceptance job run against the production stack through nginx.
 
 ## Non-goals

@@ -1,5 +1,18 @@
 # Ticketing
 
+TicTix is a small ticket marketplace built as event-driven microservices. Signed-in users list tickets for sale and edit their own unreserved tickets; other users reserve a ticket by creating an order. An order holds the ticket for a limited time (15 minutes by default) and is cancelled automatically when that time runs out, which releases the ticket for someone else. Users can also cancel their own orders. No payment flow is implemented.
+
+The project shows how independent services, each owning its data, stay consistent through asynchronous NATS JetStream events rather than direct calls or distributed transactions, and how the whole stack runs locally, in Compose and in CI.
+
+Repository layout:
+
+- [backend/](backend): the `auth`, `tickets`, `orders` and `expiration` services and the shared `common` library.
+- [client/](client): the React single-page app.
+- [deploy/](deploy): nginx and NUI configuration.
+- [scripts/](scripts): portable install, dev, test and Compose launchers.
+- [test/](test): root manifest, Compose and live acceptance tests.
+- [docs/](docs): design specs and implementation plans.
+
 ## Architecture
 
 Event-driven microservices. Each service owns its data (separate databases on the MongoDB server in Compose). The frontend is a React single-page app built by Vite. In the production stack, nginx serves its static files and sends `/api` requests to the owning service; in development, the Vite dev server proxies `/api` itself. Backend services communicate asynchronously through NATS JetStream, using the event contracts defined in the local `common` package. No npm publication or Git push is required to use changes to the shared library.
@@ -93,7 +106,7 @@ The nginx configuration is [deploy/nginx/default.conf](deploy/nginx/default.conf
 
 Security limits: HTTP only (no TLS, no domain); session cookies are not marked `secure`; Redis and NATS have no authentication and rely on the internal Compose network.
 
-Optional shortcut: `npm run compose:up`. Its engine selection is `COMPOSE_BIN` first, then native Windows Docker when on PATH, otherwise Windows WSL/Podman; on Linux prefer Podman, otherwise Docker. The selected engine is printed and failures retain their exit status without silently switching engines. `COMPOSE_BIN` is an executable path or a JSON array of executable/arguments, not an evaluated shell command. For Node-based overrides, use `--` before the script to prevent Node consuming forwarded options. Selector/stub tests cover these branches.
+Optional shortcut: `npm run compose:up` builds and starts this stack together with the dev overlay, so the infrastructure ports are also published on `127.0.0.1` and Redis Insight and NUI run (see [Infrastructure containers and local watch](#infrastructure-containers-and-local-watch)). `npm run compose:acceptance` keeps the plain production stack. The shortcuts' engine selection is `COMPOSE_BIN` first, then native Windows Docker when on PATH, otherwise Windows WSL/Podman; on Linux prefer Podman, otherwise Docker. The selected engine is printed and failures retain their exit status without silently switching engines. `COMPOSE_BIN` is an executable path or a JSON array of executable/arguments, not an evaluated shell command. For Node-based overrides, use `--` before the script to prevent Node consuming forwarded options. Selector/stub tests cover these branches.
 
 Host npm workflows require Node 24 (see `.nvmrc`). Install/update/test/dev commands still use WSL when launched on Windows so they use Linux-installed dependencies; Compose is routed before that relay.
 
@@ -119,11 +132,11 @@ npm run dev
 
 Press Ctrl+C to stop the local watchers; infrastructure remains running until `npm run compose:down`. Development serves the application at <http://localhost:3000>.
 
-Data browsers in infra mode:
+Data browsers (infra mode and `compose:up`):
 
 - MongoDB: use [MongoDB Compass](https://www.mongodb.com/products/tools/compass) on the host with `mongodb://root:<MONGO_ROOT_PASSWORD>@127.0.0.1:27017/?authSource=admin`.
-- Redis Insight, started by `compose:infra`: <http://127.0.0.1:15540>. Accept its EULA on first visit; the preconfigured `ticketing` connection to `redis:6379` then appears. Its free edition has no login, so it relies on the loopback binding, and its settings reset when the container is recreated.
-- NATS JetStream, through [NUI](https://natsnui.app) started by `compose:infra`: <http://127.0.0.1:31311>. The `ticketing` connection to `nats://nats:4222` is imported at startup from [deploy/nui/ticketing.json](deploy/nui/ticketing.json); open it to browse the `TICKETING` stream and its messages, inspect consumers or subscribe to subjects. NUI has no login, so it relies on the loopback binding, and its settings reset when the container is recreated.
+- Redis Insight, started by `compose:infra` and `compose:up`: <http://127.0.0.1:15540>. Accept its EULA on first visit; the preconfigured `ticketing` connection to `redis:6379` then appears. Its free edition has no login, so it relies on the loopback binding, and its settings reset when the container is recreated.
+- NATS JetStream, through [NUI](https://natsnui.app) started by `compose:infra` and `compose:up`: <http://127.0.0.1:31311>. The `ticketing` connection to `nats://nats:4222` is imported at startup from [deploy/nui/ticketing.json](deploy/nui/ticketing.json); open it to browse the `TICKETING` stream and its messages, inspect consumers or subscribe to subjects. NUI has no login, so it relies on the loopback binding, and its settings reset when the container is recreated.
 
 All client requests run in the browser on the frontend origin. In development, `AUTH_API_URL`, `ORDERS_API_URL` and `TICKETS_API_URL` set the Vite proxy targets; the local dev launcher supplies localhost defaults. Production needs none of them: nginx routes `/api`. The dev launcher also supplies development JWT, MongoDB, NATS and Redis defaults when neither the shell nor `.env` sets them.
 
@@ -152,7 +165,7 @@ All packages target Node 24 and use matching ranges for shared direct dependenci
 
 ## Package Documentation
 
-The four backend services and the shared common library live under [backend/](backend); the client, deployment files, scripts and root tests stay at the repository root. Run package commands from the root with `npm --prefix backend/<name> run <script>` (or `npm --prefix client run <script>`).
+Run package commands from the root with `npm --prefix backend/<name> run <script>` (or `npm --prefix client run <script>`).
 
 - [Auth](backend/auth/README.md): users, password hashing and cookie sessions.
 - [Tickets](backend/tickets/README.md): ownership, versioning and reservations.
@@ -164,10 +177,6 @@ The four backend services and the shared common library live under [backend/](ba
 - [Root tests](test/README.md): live-stack requirements and regression coverage.
 
 The client supports ticket search, reservation, confirmed cancellation, server-status polling and expiry countdowns. It does not implement payments or infer currency.
-
-## VS Code Tasks
-
-[.vscode/tasks.json](.vscode/tasks.json) provides optional reusable tasks for installation, development, container lifecycle, typechecks/service tests/builds, manifests, client tests and acceptance. Use **Terminal > Run Task**. Start either full containers or local watchers, not both on the same ports. Prepare the acceptance stack before **Ticketing: Test All**. Tasks invoke existing npm scripts and are not required by the app or CI; no one-off migration scripts remain.
 
 ## Tests
 
@@ -214,7 +223,7 @@ The suite creates uniquely named test users and tickets and cleans up its extra 
 
 ## Ports
 
-Production stack: only nginx is published, on `HTTP_PORT` (default 80). Inside the Compose network and in local watch mode:
+Production stack: only nginx is published, on `HTTP_PORT` (default 8080). Inside the Compose network and in local watch mode:
 
 - auth: 3001
 - client: 3000

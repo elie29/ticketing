@@ -41,6 +41,7 @@ function runCompose(options, root) {
     return result.status ?? (result.signal === 'SIGINT' ? 130 : 1);
   }
   // The dev overlay publishes the infra ports on 127.0.0.1 and defines the Redis Insight and NUI (NATS) UIs.
+  // up, infra and down use it; acceptance tests the plain production stack.
   const dev = ['-f', 'docker-compose.yaml', '-f', 'docker-compose.dev.yaml'];
   if (action === 'infra') {
     const status = execute([...dev, 'stop', 'nginx', 'auth', 'tickets', 'orders', 'expiration']);
@@ -50,7 +51,7 @@ function runCompose(options, root) {
     const status = execute(['up', '--build', '-d', ...args]);
     return status || execute(['up', '-d', '--force-recreate', '--no-deps', 'orders']);
   }
-  if (action === 'up') return execute(['up', '--build', '-d', ...args]);
+  if (action === 'up') return execute([...dev, 'up', '--build', '-d', ...args]);
   if (action === 'down') return execute([...dev, 'down', ...args]);
   return execute([action, ...args]);
 }
