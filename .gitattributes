@@ -1,1 +1,4 @@
 scripts/*.sh text eol=lf
+
+.env.example text eol=lf
+.env text eol=lf
