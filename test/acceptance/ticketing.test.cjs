@@ -2,7 +2,9 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const { setTimeout: delay } = require('node:timers/promises');
 
-const baseURL = process.env.ACCEPTANCE_BASE_URL || 'http://localhost';
+const { ACCEPTANCE_BASE_URL, HTTP_PORT } = process.env;
+// Same port Compose publishes: npm run test:acceptance fills HTTP_PORT from the root .env when the shell has not set it.
+const baseURL = ACCEPTANCE_BASE_URL || (HTTP_PORT ? `http://localhost:${HTTP_PORT}` : 'http://localhost');
 const requestTimeout = 15000;
 const eventTimeout = 10000;
 

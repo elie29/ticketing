@@ -219,11 +219,11 @@ npm run test:acceptance
 
 Acceptance tests need a running application: either full Compose or local watch mode backed by infrastructure containers. They wait for frontend/API readiness, then check that page URLs (including a deep link) return the app shell while API paths reach the services, and exercise authentication cookies, validation errors, authorization, and event-driven ticket reservation/cancellation. The automatic-expiration test observes the returned `expiresAt`, checks that the order is not cancelled early, waits for Redis/Bull and NATS to cancel it and release its ticket, and verifies the ticket can be reserved again. It does not manually cancel the order whose automatic expiration is being checked.
 
-The suite creates uniquely named test users and tickets and cleans up its extra reservation. Use a development/test stack, not production. The suite targets nginx at `http://localhost` by default; set `ACCEPTANCE_BASE_URL=http://localhost:3000` for local watch mode, or another URL for a different frontend. On a normally configured stack the expiration case can take fifteen minutes; use `compose:acceptance` for the short test lifetime. The real brokers, database, and expiration worker are not mocked in acceptance tests.
+The suite creates uniquely named test users and tickets and cleans up its extra reservation. Use a development/test stack, not production. The suite targets `ACCEPTANCE_BASE_URL` when set, otherwise nginx at `http://localhost:${HTTP_PORT}`, otherwise `http://localhost`; `npm run test:acceptance` reads `HTTP_PORT` from the root `.env` when the shell has not set it (only that variable). Set `ACCEPTANCE_BASE_URL=http://localhost:3000` for local watch mode, or another URL for a different frontend. On a normally configured stack the expiration case can take fifteen minutes; use `compose:acceptance` for the short test lifetime. The real brokers, database, and expiration worker are not mocked in acceptance tests.
 
 ## Ports
 
-Production stack: only nginx is published, on `HTTP_PORT` (default 8080). Inside the Compose network and in local watch mode:
+Production stack: only nginx is published, on `HTTP_PORT` (Compose default 80; `.env.example` sets 8080). Inside the Compose network and in local watch mode:
 
 - auth: 3001
 - client: 3000

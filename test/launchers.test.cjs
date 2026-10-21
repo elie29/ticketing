@@ -57,12 +57,12 @@ describe('package actions', () => {
   const R = 'R';
   const prefix = directory => ['--prefix', path.join(R, directory)];
   const services = ['backend/auth', 'backend/tickets', 'backend/orders', 'backend/expiration', 'client'];
-  const act = (name, { status, exists } = {}) => {
+  const act = (name, { status, exists, readFile = () => null } = {}) => {
     const npm = recorder(status);
     const run = recorder(status);
     const logs = [];
     const action = require(`../scripts/actions/${name}.cjs`);
-    const result = action({ root: R, options: ['--x'], npm: npm.fn, run: run.fn, log: message => logs.push(message), exists });
+    const result = action({ root: R, options: ['--x'], npm: npm.fn, run: run.fn, log: message => logs.push(message), exists, readFile });
     return { result, npm: npm.calls.map(([args]) => args), run: run.calls, logs };
   };
 
@@ -116,14 +116,36 @@ describe('package actions', () => {
     assert.deepEqual(logs, backends.map(service => `Checking and testing ${service}`));
   });
 
-  test('vitest runs the root and client projects with node from the root', () => {
-    const { result, run } = act('vitest', { exists: () => true });
+  test('vitest runs the root and client projects with node from the root, with the .env HTTP_PORT', () => {
+    const read = [];
+    const readFile = file => { read.push(file); return 'HTTP_PORT=8080'; };
+    const { result, run } = act('vitest', { exists: () => true, readFile });
     assert.equal(result, 0);
+    assert.deepEqual(read, [path.join(R, '.env')]);
     assert.deepEqual(run, [[
       process.execPath,
       [path.join(R, 'node_modules/vitest/vitest.mjs'), 'run', '--project', 'root', '--project', 'client', '--x'],
-      { cwd: R },
+      { cwd: R, env: vitestEnvironment(process.env, 'HTTP_PORT=8080') },
     ]]);
+  });
+
+  const { vitestEnvironment } = require('../scripts/actions/vitest.cjs');
+
+  test('vitestEnvironment takes only HTTP_PORT from .env', () => {
+    const env = vitestEnvironment({ PATH: 'p' }, 'JWT_KEY=secret\r\nHTTP_PORT=8080\r\nHTTP_PORT=9090\r\nMONGO_ROOT_PASSWORD=x\r\n');
+    assert.deepEqual(env, { PATH: 'p', HTTP_PORT: '8080' });
+  });
+
+  test('vitestEnvironment keeps the shell HTTP_PORT', () => {
+    assert.deepEqual(vitestEnvironment({ HTTP_PORT: '81' }, 'HTTP_PORT=8080'), { HTTP_PORT: '81' });
+  });
+
+  test('vitestEnvironment ignores an empty HTTP_PORT', () => {
+    assert.deepEqual(vitestEnvironment({}, 'HTTP_PORT='), {});
+  });
+
+  test('vitestEnvironment without a .env adds nothing', () => {
+    assert.deepEqual(vitestEnvironment({ PATH: 'p' }, null), { PATH: 'p' });
   });
 
   test('vitest without root dependencies asks for an install', () => {
