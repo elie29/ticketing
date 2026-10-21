@@ -27,7 +27,7 @@ The build generates JavaScript and declarations in `build/`; do not edit generat
 
 ## Real Broker Verification
 
-The separate [broker suite](test/broker/jetstream.test.cjs) requires a dedicated disposable JetStream broker, never the running application's broker. Normal unit tests (the `common` project of the root [vitest.config.mts](../../vitest.config.mts)) do not require NATS and do not discover this integration suite, which is the separate `common-broker` project. From WSL/Linux at the repository root:
+The separate [broker suite](test/broker/jetstream.test.cjs) requires a dedicated disposable JetStream broker, never the running application's broker. Normal unit tests (the `common` project of the root [vitest.config.mts](../../vitest.config.mts)) do not require NATS and do not discover this integration suite, which is the separate `common-broker` project. From a POSIX shell (Git Bash, a WSL terminal, Linux or macOS) at the repository root:
 
 ```bash
 podman run --rm -d --name ticketing-broker-verification -p 127.0.0.1:14222:4222 docker.io/library/nats:2.12-alpine --jetstream --store_dir /data
@@ -35,6 +35,6 @@ NATS_TEST_URL=nats://127.0.0.1:14222 npm --prefix backend/common run test:broker
 podman stop ticketing-broker-verification
 ```
 
-Docker users can substitute `docker` for `podman`. Stop the temporary container even when a test fails. The suite checks file-backed replay, independent groups, durable resume after reconnect and automatic redelivery after missing acknowledgement. CI runs it in a separate broker job. It does not claim an exactly-once guarantee or certify broker-host disaster recovery.
+In PowerShell, set the variable first: `$env:NATS_TEST_URL = 'nats://127.0.0.1:14222'; npm --prefix backend/common run test:broker`. Docker users can substitute `docker` for `podman`. Stop the temporary container even when a test fails. The suite checks file-backed replay, independent groups, durable resume after reconnect and automatic redelivery after missing acknowledgement. CI runs it in a separate broker job. It does not claim an exactly-once guarantee or certify broker-host disaster recovery.
 
 The [root watch launcher](../../README.md#infrastructure-containers-and-local-watch) recompiles common and restarts dependent backends. [Dockerfile](Dockerfile) compiles common in its `common` stage and copies the build into the `service` target selected by `SERVICE`, which runs as the `node` user with `NODE_ENV=production`; Compose uses that target for every backend.

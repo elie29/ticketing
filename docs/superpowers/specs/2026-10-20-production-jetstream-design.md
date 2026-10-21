@@ -32,6 +32,8 @@ Root npm Compose scripts are optional convenience shortcuts. Document the corres
 
 ## Engine Selection Contract
 
+> Superseded on 2026-10-21 by [native launchers](2026-10-21-native-launchers-design.md): root commands run natively, no WSL. Compose now uses Docker, then Podman, otherwise an error; `COMPOSE_BIN` is removed.
+
 The Compose shim selects the execution engine in this exact precedence:
 
 | Priority | Condition | Selected execution |

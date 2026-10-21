@@ -1,40 +1,35 @@
-const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
 const path = require('node:path');
+const { createNpm, run } = require('./lib/process.cjs');
 
-const [action, ...options] = process.argv.slice(2);
-if (!['install', 'update', 'test', 'dev', 'compose', 'vitest'].includes(action)) {
+// Each action runs in the shell it was launched from, with that environment's node, npm and tools.
+const actions = {
+  install: () => require('./actions/install.cjs'),
+  update: () => require('./actions/update.cjs'),
+  test: () => require('./actions/test.cjs'),
+  dev: () => require('./actions/dev.cjs'),
+  vitest: () => require('./actions/vitest.cjs'),
+  compose: () => ({ root, options }) => require('./compose.cjs').runCompose(options, root),
+};
+
+const [name, ...options] = process.argv.slice(2);
+if (!Object.hasOwn(actions, name)) {
   console.error('Expected install, update, test, dev, compose, or vitest.');
   process.exit(1);
 }
 
-const root = path.resolve(__dirname, '..');
-let result;
+const context = {
+  root: path.resolve(__dirname, '..'),
+  options,
+  run,
+  log: console.log,
+  exists: fs.existsSync,
+  readFile: file => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null),
+  loadConcurrently: () => import('concurrently').then(module => module.concurrently),
+  // Created on first use, so compose and vitest never need npm_execpath.
+  get npm() { return createNpm(); },
+};
 
-if (action === 'compose') {
-  try { process.exit(require('./compose.cjs').runCompose(options, root)); }
-  catch (error) { console.error(error.message); process.exit(1); }
-}
-
-if (process.platform === 'win32') {
-  const converted = spawnSync('wsl.exe', ['--exec', 'wslpath', '-u', root], {
-    encoding: 'utf8',
-  });
-  if (converted.error || converted.status !== 0) {
-    console.error(converted.error?.message || converted.stderr || 'WSL is unavailable.');
-    process.exit(1);
-  }
-
-  result = spawnSync('wsl.exe', [
-    '--cd', converted.stdout.trim(),
-    '--exec', '/bin/bash', '-lic', 'exec bash "$@"',
-    'ticketing', `scripts/${action}.sh`, ...options,
-  ], { stdio: 'inherit' });
-} else {
-  result = spawnSync('bash', [path.join(__dirname, `${action}.sh`), ...options], {
-    cwd: root,
-    stdio: 'inherit',
-  });
-}
-
-if (result.error) console.error(result.error.message);
-process.exit(result.status ?? 1);
+Promise.resolve()
+  .then(() => actions[name]()(context))
+  .then(status => process.exit(status), error => { console.error(error.message); process.exit(1); });

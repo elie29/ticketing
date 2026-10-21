@@ -106,9 +106,9 @@ The nginx configuration is [deploy/nginx/default.conf](deploy/nginx/default.conf
 
 Security limits: HTTP only (no TLS, no domain); session cookies are not marked `secure`; Redis and NATS have no authentication and rely on the internal Compose network.
 
-Optional shortcut: `npm run compose:up` builds and starts this stack together with the dev overlay, so the infrastructure ports are also published on `127.0.0.1` and Redis Insight and NUI run (see [Infrastructure containers and local watch](#infrastructure-containers-and-local-watch)). `npm run compose:acceptance` keeps the plain production stack. The shortcuts' engine selection is `COMPOSE_BIN` first, then native Windows Docker when on PATH, otherwise Windows WSL/Podman; on Linux prefer Podman, otherwise Docker. The selected engine is printed and failures retain their exit status without silently switching engines. `COMPOSE_BIN` is an executable path or a JSON array of executable/arguments, not an evaluated shell command. For Node-based overrides, use `--` before the script to prevent Node consuming forwarded options. Selector/stub tests cover these branches.
+Optional shortcut: `npm run compose:up` builds and starts this stack together with the dev overlay, so the infrastructure ports are also published on `127.0.0.1` and Redis Insight and NUI run (see [Infrastructure containers and local watch](#infrastructure-containers-and-local-watch)). `npm run compose:acceptance` keeps the plain production stack. The shortcuts use `docker compose` when `docker` is on PATH, otherwise `podman compose` when `podman` is; with neither they stop with an error. The order is the same on every platform, the selected engine is printed, and a failure keeps its exit status without switching engines.
 
-Host npm workflows require Node 24 (see `.nvmrc`). Install/update/test/dev commands still use WSL when launched on Windows so they use Linux-installed dependencies; Compose is routed before that relay.
+Host npm workflows require Node 24 (see `.nvmrc`). Every root command runs in the shell it is launched from (PowerShell, cmd, Git Bash, a WSL terminal, Linux or macOS) with that environment's Node, npm and Docker/Podman; nothing is forwarded to WSL. If you previously installed through the old WSL launchers, reinstall with `npm install` from the shell you work in: the existing `node_modules` folders hold Linux-only native builds.
 
 The shared multistage build lives in `backend/common/Dockerfile`. Its `common` target compiles the library; its `service` target builds a backend selected by the `SERVICE` build argument. These Compose builds keep the repository root as their context so they can access both the shared library and consumer source. The client has its own multistage `client/Dockerfile`.
 
@@ -144,7 +144,7 @@ All client requests run in the browser on the frontend origin. In development, `
 
 Auth, tickets, orders, and expiration declare `@elie29/ticketing-common` as `file:../common`. The package is private and has no publish script. Its JavaScript and TypeScript declarations are generated in `backend/common/build`.
 
-For development outside containers, run dependency commands from the repository root inside WSL with Node 24:
+For development outside containers, run dependency commands from the repository root, in any shell, with Node 24:
 
 ```bash
 npm run install
@@ -215,7 +215,7 @@ npm run test:services
 npm run test:acceptance
 ```
 
-`test:services` runs common/backend checks and the frontend production build without requiring the Compose stack. Backend suites start temporary MongoDB instances; the first run may need to download a MongoDB binary. Run this build-oriented command outside a running local `npm run dev`, since both use the client's build directory. Each backend also exposes `typecheck`, `test` (one Vitest run of its project), `test:watch` (interactive Vitest watch of its project), and `test:ci` scripts through `npm --prefix backend/<service> run <script>`. Root test launchers use WSL from Windows so they resolve the same Linux-installed tooling as install/update.
+`test:services` runs common/backend checks and the frontend production build without requiring the Compose stack. Backend suites start temporary MongoDB instances; the first run may need to download a MongoDB binary. Run this build-oriented command outside a running local `npm run dev`, since both use the client's build directory. Each backend also exposes `typecheck`, `test` (one Vitest run of its project), `test:watch` (interactive Vitest watch of its project), and `test:ci` scripts through `npm --prefix backend/<service> run <script>`. Root test launchers run natively in the launching shell, like install/update.
 
 Acceptance tests need a running application: either full Compose or local watch mode backed by infrastructure containers. They wait for frontend/API readiness, then check that page URLs (including a deep link) return the app shell while API paths reach the services, and exercise authentication cookies, validation errors, authorization, and event-driven ticket reservation/cancellation. The automatic-expiration test observes the returned `expiresAt`, checks that the order is not cancelled early, waits for Redis/Bull and NATS to cancel it and release its ticket, and verifies the ticket can be reserved again. It does not manually cancel the order whose automatic expiration is being checked.
 

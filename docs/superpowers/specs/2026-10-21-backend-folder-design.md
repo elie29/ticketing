@@ -71,3 +71,5 @@ docker-compose.yaml  docker-compose.dev.yaml  vitest.config.mts  package.json  p
 - Node 24, Vitest 5, existing WSL-based root launchers on Windows.
 - Never `git push` (user rule).
 - No distributed-transaction or behaviour changes; this is a pure file move plus path updates.
+
+> Superseded on 2026-10-21 by [native launchers](2026-10-21-native-launchers-design.md): root commands run natively, no WSL.

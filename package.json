@@ -15,7 +15,7 @@
     "compose:down": "node scripts/manage-packages.cjs compose down",
     "test": "npm run test:manifests && npm run test:services && npm run test:routing",
     "test:all": "npm test && npm run test:acceptance",
-    "test:manifests": "node scripts/manage-packages.cjs vitest test/package-manifests.test.cjs test/compose.test.cjs",
+    "test:manifests": "node scripts/manage-packages.cjs vitest test/package-manifests.test.cjs test/compose.test.cjs test/launchers.test.cjs",
     "test:services": "node scripts/manage-packages.cjs test",
     "test:acceptance": "node scripts/manage-packages.cjs vitest test/acceptance/ticketing.test.cjs",
     "test:routing": "node scripts/manage-packages.cjs vitest client/test",

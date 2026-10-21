@@ -17,6 +17,8 @@ Subsequent production/JetStream and portable Compose requirements are specified 
 - CI includes all four backends, common, client production build, manifest/routing checks, and a real Compose acceptance job. Root Vitest tooling is installed without recursive install lifecycle scripts.
 - Package engines, application images, and CI use Node 24. Root launchers use WSL from Windows to avoid mixing platform-specific dependencies.
 
+> Superseded on 2026-10-21 by [native launchers](2026-10-21-native-launchers-design.md): root commands run natively, no WSL.
+
 ## Compatibility Contract
 
 Preserve route paths, status codes, response bodies, validation error field names, password hashing behavior, JWT claims, cookie-session behavior, and authentication requirements. Preserve stored document fields and JSON serialization, including id and version handling.
